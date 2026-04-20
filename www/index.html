@@ -2,13 +2,145 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Приложение 1</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Супер Блокнот</title>
+    <link rel="manifest" href="data:application/manifest+json,{name:'Супер Блокнот',short_name:'Блокнот',display:'standalone',theme_color:'%231e1e2e',background_color:'%231e1e2e',icons:[{src:'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' rx=\'20\' fill=\'%23a6e3a1\'/%3E%3Cpath d=\'M30 30 L70 30 L70 70 L30 70 Z\' stroke=\'%231e1e2e\' stroke-width=\'4\' fill=\'none\'/%3E%3C/svg%3E',sizes:'512x512',type:'image/svg+xml'}]}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
-    <div class="container">
-        <h1>1</h1>
+    <div id="app">
+        <header class="header">
+            <button class="icon-btn" id="menuToggle">☰</button>
+            <h1>Блокнот</h1>
+            <div class="header-actions">
+                <button class="icon-btn" id="searchBtn">🔍</button>
+                <button class="icon-btn" id="sortBtn">📊</button>
+                <button class="icon-btn" id="themeToggle">🌙</button>
+            </div>
+        </header>
+        <div class="search-bar hidden" id="searchBar">
+            <input type="text" id="searchInput" placeholder="Поиск по заметкам...">
+            <button class="icon-btn" id="clearSearch">✕</button>
+        </div>
+        <div class="sort-menu hidden" id="sortMenu">
+            <button data-sort="date-desc">Сначала новые</button>
+            <button data-sort="date-asc">Сначала старые</button>
+            <button data-sort="title-asc">По алфавиту А-Я</button>
+            <button data-sort="title-desc">По алфавиту Я-А</button>
+        </div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Меню</h3>
+                <button class="icon-btn" id="closeSidebar">✕</button>
+            </div>
+            <nav>
+                <button class="sidebar-btn active" data-filter="all">📋 Все заметки</button>
+                <button class="sidebar-btn" data-filter="favorites">⭐ Избранное</button>
+                <button class="sidebar-btn" data-filter="todo">✅ Задачи</button>
+                <button class="sidebar-btn" data-filter="reminder">⏰ Напоминания</button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="export-btn" id="exportNotes">📤 Экспорт</button>
+                <button class="import-btn" id="importNotes">📥 Импорт</button>
+                <div class="storage-info" id="storageInfo"></div>
+            </div>
+        </aside>
+        <div class="overlay hidden" id="overlay"></div>
+        <main class="main-content">
+            <div class="notes-container" id="notesContainer">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📝</div>
+                    <h3>Нет заметок</h3>
+                    <p>Нажмите + чтобы создать</p>
+                </div>
+                <div class="notes-grid" id="notesGrid"></div>
+            </div>
+            <button class="fab" id="addNoteBtn">+</button>
+        </main>
+        <div class="modal hidden" id="editorModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="icon-btn" id="closeEditor">←</button>
+                    <h2>Редактор</h2>
+                    <div>
+                        <button class="icon-btn" id="favoriteToggle">☆</button>
+                        <button class="icon-btn" id="moreOptions">⋮</button>
+                    </div>
+                </div>
+                <div class="editor-options hidden" id="editorOptions">
+                    <button id="setReminderBtn">⏰ Установить напоминание</button>
+                    <button id="voiceInputBtn">🎤 Голосовой ввод</button>
+                    <button id="attachFileBtn">📎 Прикрепить файл</button>
+                    <button id="drawBtn">✏️ Рисование</button>
+                    <button id="pinNoteBtn">📌 Закрепить</button>
+                </div>
+                <input type="text" id="noteTitle" placeholder="Заголовок" class="note-title-input">
+                <div class="format-bar">
+                    <button data-format="bold" title="Жирный">B</button>
+                    <button data-format="italic" title="Курсив">I</button>
+                    <button data-format="underline" title="Подчеркнутый">U</button>
+                    <button data-format="strike" title="Зачеркнутый">S</button>
+                    <button data-format="ul" title="Список">•</button>
+                    <button data-format="ol" title="Нумерованный">1.</button>
+                    <button data-format="code" title="Код">{ }</button>
+                    <button data-format="checklist" title="Чеклист">☑</button>
+                    <select id="fontSizeSelect">
+                        <option value="small">Мелкий</option>
+                        <option value="medium" selected>Средний</option>
+                        <option value="large">Крупный</option>
+                    </select>
+                    <input type="color" id="textColor" value="#cdd6f4">
+                </div>
+                <div class="editor-wrapper">
+                    <textarea id="noteContent" placeholder="Начните писать..."></textarea>
+                    <div class="editor-preview hidden" id="editorPreview"></div>
+                </div>
+                <div class="editor-tabs">
+                    <button class="editor-tab active" data-tab="edit">✎ Редактировать</button>
+                    <button class="editor-tab" data-tab="preview">👁 Просмотр</button>
+                </div>
+                <div class="note-meta">
+                    <span id="wordCount">0 слов</span>
+                    <span id="charCount">0 символов</span>
+                    <span id="lastSaved"></span>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="deleteNote">🗑️ Удалить</button>
+                    <button class="btn-secondary" id="shareNote">📤 Поделиться</button>
+                    <button class="btn-primary" id="saveNote">Сохранить</button>
+                </div>
+            </div>
+        </div>
+        <div class="draw-modal hidden" id="drawModal">
+            <div class="draw-content">
+                <div class="draw-header">
+                    <h3>Рисование</h3>
+                    <button class="icon-btn" id="closeDraw">✕</button>
+                </div>
+                <canvas id="drawCanvas" width="300" height="300"></canvas>
+                <div class="draw-controls">
+                    <input type="color" id="drawColor" value="#000000">
+                    <input type="range" id="drawSize" min="1" max="10" value="3">
+                    <button id="clearCanvas">Очистить</button>
+                    <button id="saveDrawing">Сохранить</button>
+                </div>
+            </div>
+        </div>
+        <div class="reminder-modal hidden" id="reminderModal">
+            <div class="modal-content">
+                <h3>Установить напоминание</h3>
+                <input type="datetime-local" id="reminderDateTime">
+                <textarea id="reminderText" placeholder="Текст напоминания"></textarea>
+                <div class="modal-actions">
+                    <button id="cancelReminder">Отмена</button>
+                    <button id="saveReminder">Сохранить</button>
+                </div>
+            </div>
+        </div>
+        <div class="toast-container" id="toastContainer"></div>
     </div>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js"></script>
 </body>
 </html>
