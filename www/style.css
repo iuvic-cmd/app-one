@@ -1,0 +1,19 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+.container {
+    text-align: center;
+}
+h1 {
+    font-size: 50vw;
+    color: #e94560;
+    margin: 0;
+    text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+}
