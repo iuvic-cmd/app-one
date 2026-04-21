@@ -1150,3 +1150,16 @@ window.openItem = function(name) {
     _origOpenItem(name);
   }
 };
+
+// ── FIX HTML VIEWER CLOSE ──
+document.addEventListener('DOMContentLoaded', function() {
+  var overlay = document.getElementById('modalOverlay');
+  var oldClick = overlay.onclick;
+  overlay.onclick = function(e) {
+    if (e.target === overlay) {
+      var viewer = document.getElementById('htmlViewerModal');
+      if (viewer && viewer.style.display !== 'none') return; // не закрывать viewer по клику на overlay
+      if (oldClick) oldClick.call(overlay, e);
+    }
+  };
+});
