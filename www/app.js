@@ -1000,3 +1000,104 @@ document.addEventListener('DOMContentLoaded', function() {
   var ti = document.getElementById('taskImport');
   if (ti) ti.onclick = function() { document.getElementById('realImportInput').click(); };
 });
+
+// ── CAPACITOR FILESYSTEM INTEGRATION ──
+window.CapFS = {
+  ready: false,
+  init: async function() {
+    try {
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
+        this.FS = window.Capacitor.Plugins.Filesystem;
+        this.ready = true;
+        console.log('✅ Capacitor Filesystem ready');
+      }
+    } catch(e) { console.log('Capacitor not available:', e); }
+  },
+  saveFile: async function(filename, content, isBinary) {
+    if (!this.ready) return false;
+    try {
+      await this.FS.writeFile({
+        path: 'MyComputer/' + filename,
+        data: isBinary ? content : btoa(unescape(encodeURIComponent(content))),
+        directory: 'DOCUMENTS',
+        recursive: true
+      });
+      return true;
+    } catch(e) { console.log('Save error:', e); return false; }
+  },
+  readFile: async function(filename) {
+    if (!this.ready) return null;
+    try {
+      const result = await this.FS.readFile({
+        path: 'MyComputer/' + filename,
+        directory: 'DOCUMENTS'
+      });
+      return result.data;
+    } catch(e) { return null; }
+  },
+  requestPermissions: async function() {
+    if (!this.ready) return;
+    try {
+      await this.FS.requestPermissions();
+    } catch(e) {}
+  }
+};
+
+// Инициализация при старте
+window.CapFS.init().then(() => {
+  if (window.CapFS.ready) window.CapFS.requestPermissions();
+});
+
+// Переопределяем импорт с поддержкой бинарных файлов
+(function() {
+  var inp = document.getElementById('realImportInput');
+  if (inp) inp.accept = '*/*';
+
+  async function handleImportFiles(files) {
+    if (!currentPath.length) { showMsg('Импорт','Откройте папку сначала.','OK'); return; }
+    const parent = getNode(currentPath);
+    if (!parent || !parent.children) { showMsg('Импорт','Выберите папку внутри диска.','OK'); return; }
+
+    const TEXT_EXTS = ['.txt','.json','.html','.js','.css','.md','.csv','.xml','.ts','.py','.sql','.java','.php'];
+    let count = 0;
+
+    for (const file of Array.from(files)) {
+      const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : '.txt';
+      const isText = TEXT_EXTS.indexOf(ext) >= 0;
+      const now = Date.now();
+      let name = file.name;
+      if (parent.children[name]) name = name.replace(ext, '_copy' + ext);
+
+      try {
+        if (isText) {
+          const text = await file.text();
+          parent.children[name] = { type:'file', ext, created:now, modified:now, content:text };
+          count++;
+        } else {
+          // Бинарный — сохраняем через Capacitor
+          const reader = new FileReader();
+          const b64 = await new Promise(res => {
+            reader.onload = () => res(reader.result);
+            reader.readAsDataURL(file);
+          });
+          if (window.CapFS.ready) {
+            await window.CapFS.saveFile(name, b64, true);
+            parent.children[name] = { type:'file', ext, created:now, modified:now, content:'[binary:' + name + ']', binary:true, size: file.size };
+            count++;
+          } else {
+            showMsg('Ошибка', 'Capacitor недоступен для файла: ' + name, 'OK');
+          }
+        }
+      } catch(e) { console.log('Import error:', e); }
+    }
+
+    if (count > 0) { saveFS(); render(); showMsg('Импорт','✅ Импортировано: ' + count + ' файл(ов)','OK'); }
+    if (inp) inp.value = '';
+  }
+
+  if (inp) {
+    inp.removeEventListener('change', inp._importHandler);
+    inp._importHandler = function() { handleImportFiles(inp.files); };
+    inp.addEventListener('change', inp._importHandler);
+  }
+})();
