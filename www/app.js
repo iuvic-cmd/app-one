@@ -1,3 +1,5 @@
+import { Filesystem, Directory, Encoding } from 'https://cdn.jsdelivr.net/npm/@capacitor/filesystem@8.1.2/+esm';
+
 // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
 let notes = JSON.parse(localStorage.getItem('superNotes')) || [];
 let currentNoteId = null;
@@ -20,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderNotes();
     checkReminders();
     setInterval(checkReminders, 60000);
+    setTimeout(addFileManagerButtons, 500);
 });
 
 // ==================== ТЕМА ====================
@@ -370,4 +373,89 @@ function exportNotes() { const d = JSON.stringify(notes, null, 2); const b = new
 function importNotes(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => { try { const imp = JSON.parse(ev.target.result); if (Array.isArray(imp)) { if (confirm('Заменить заметки?')) notes = imp; else notes = [...notes, ...imp]; localStorage.setItem('superNotes', JSON.stringify(notes)); renderNotes(); initStorageInfo(); showToast('Импортировано', 'success'); } } catch { showToast('Ошибка', 'error'); } }; r.readAsText(f); e.target.value = ''; }
 function initStorageInfo() { const s = new Blob([JSON.stringify(notes)]).size; document.getElementById('storageInfo').textContent = `${notes.length} заметок, ${(s/1024).toFixed(2)} KB`; }
 function showToast(msg, type='info') { const c = document.getElementById('toastContainer'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; c.appendChild(t); setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000); }
+
+// ==================== ФАЙЛОВЫЙ МЕНЕДЖЕР ====================
+async function createNotebookFolder() {
+    try {
+        await Filesystem.mkdir({ path: 'СуперБлокнот', directory: Directory.Documents, recursive: true });
+        showToast('Папка "СуперБлокнот" создана в памяти', 'success');
+        return true;
+    } catch (e) {
+        if (e.message.includes('already exists')) showToast('Папка уже существует', 'info');
+        else showToast('Ошибка создания папки', 'error');
+        return false;
+    }
+}
+
+async function saveNoteToFile(noteId) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) { showToast('Заметка не найдена', 'error'); return; }
+    await createNotebookFolder();
+    const fileName = `${note.title.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_') || 'заметка'}_${new Date().toISOString().split('T')[0]}.txt`;
+    const content = `Заголовок: ${note.title}\nДата: ${new Date(note.updatedAt).toLocaleString('ru-RU')}\n\n${note.content}`;
+    try {
+        await Filesystem.writeFile({ path: `СуперБлокнот/${fileName}`, data: content, directory: Directory.Documents, encoding: Encoding.UTF8, recursive: true });
+        showToast(`Сохранено: ${fileName}`, 'success');
+    } catch (e) { showToast('Ошибка сохранения файла', 'error'); }
+}
+
+async function saveAllNotesToFiles() {
+    if (notes.length === 0) { showToast('Нет заметок для сохранения', 'error'); return; }
+    await createNotebookFolder();
+    let saved = 0;
+    for (const note of notes) {
+        try {
+            const fileName = `${note.title.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_') || 'заметка'}_${new Date(note.updatedAt).toISOString().split('T')[0]}.txt`;
+            const content = `Заголовок: ${note.title}\nДата: ${new Date(note.updatedAt).toLocaleString('ru-RU')}\n\n${note.content}`;
+            await Filesystem.writeFile({ path: `СуперБлокнот/${fileName}`, data: content, directory: Directory.Documents, encoding: Encoding.UTF8, recursive: true });
+            saved++;
+        } catch (e) {}
+    }
+    showToast(`Сохранено ${saved} заметок в папку "СуперБлокнот"`, 'success');
+}
+
+async function listNotebookFiles() {
+    try {
+        const result = await Filesystem.readdir({ path: 'СуперБлокнот', directory: Directory.Documents });
+        if (result.files.length === 0) showToast('Папка пуста', 'info');
+        else { const fileList = result.files.map(f => f.name).join('\n'); alert(`Файлы в папке "СуперБлокнот":\n${fileList}`); }
+    } catch (e) { showToast('Папка не найдена. Создайте её.', 'error'); }
+}
+
+function addFileManagerButtons() {
+    const sidebarFooter = document.querySelector('.sidebar-footer');
+    if (!sidebarFooter) return;
+    
+    const createFolderBtn = document.createElement('button');
+    createFolderBtn.className = 'export-btn';
+    createFolderBtn.textContent = '📁 Создать папку';
+    createFolderBtn.onclick = createNotebookFolder;
+    
+    const saveAllBtn = document.createElement('button');
+    saveAllBtn.className = 'export-btn';
+    saveAllBtn.textContent = '💾 Сохранить все в файлы';
+    saveAllBtn.onclick = saveAllNotesToFiles;
+    
+    const listFilesBtn = document.createElement('button');
+    listFilesBtn.className = 'export-btn';
+    listFilesBtn.textContent = '📋 Список файлов';
+    listFilesBtn.onclick = listNotebookFiles;
+    
+    sidebarFooter.prepend(saveAllBtn);
+    sidebarFooter.prepend(listFilesBtn);
+    sidebarFooter.prepend(createFolderBtn);
+    
+    const modalActions = document.querySelector('.modal-actions');
+    if (modalActions) {
+        const saveToFileBtn = document.createElement('button');
+        saveToFileBtn.className = 'btn-secondary';
+        saveToFileBtn.textContent = '📄 В файл';
+        saveToFileBtn.onclick = () => {
+            if (currentNoteId) saveNoteToFile(currentNoteId);
+            else showToast('Сначала сохраните заметку', 'error');
+        };
+        modalActions.insertBefore(saveToFileBtn, modalActions.firstChild);
+    }
+}
+
 if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
