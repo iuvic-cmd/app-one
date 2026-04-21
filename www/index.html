@@ -1,16 +1,254 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест</title>
-    <style>
-        body { background: #1e1e2e; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        button { padding: 30px 50px; font-size: 30px; background: #a6e3a1; border: none; border-radius: 20px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Мой компьютер</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <button onclick="alert('КЛИК РАБОТАЕТ!')">НАЖМИ МЕНЯ</button>
-    <script>console.log('Скрипт загружен');</script>
+
+  <!-- TASKBAR -->
+  <div class="taskbar">
+    <div class="taskbar-start" id="startBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="2" width="9" height="9" fill="#f25022"/>
+        <rect x="13" y="2" width="9" height="9" fill="#7fba00"/>
+        <rect x="2" y="13" width="9" height="9" fill="#00a4ef"/>
+        <rect x="13" y="13" width="9" height="9" fill="#ffb900"/>
+      </svg>
+    </div>
+    <div class="taskbar-title" id="taskbarTitle">Мой компьютер</div>
+    <div class="taskbar-clock" id="clock"></div>
+  </div>
+
+  <!-- EXPLORER WINDOW -->
+  <div class="explorer-window" id="explorerWindow">
+
+    <!-- TITLE BAR -->
+    <div class="title-bar">
+      <div class="title-bar-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <rect x="2" y="6" width="20" height="14" rx="2" fill="#f0c040" stroke="#d4a020" stroke-width="1.5"/>
+          <path d="M2 10h20" stroke="#d4a020" stroke-width="1"/>
+          <rect x="2" y="6" width="8" height="4" rx="1" fill="#f0c040" stroke="#d4a020" stroke-width="1"/>
+        </svg>
+      </div>
+      <span class="title-bar-text" id="titleBarText">Мой компьютер</span>
+      <div class="title-bar-controls">
+        <button class="tb-btn tb-min" id="minBtn">─</button>
+        <button class="tb-btn tb-max" id="maxBtn">□</button>
+        <button class="tb-btn tb-close" id="closeBtn">✕</button>
+      </div>
+    </div>
+
+    <!-- MENU BAR -->
+    <div class="menu-bar">
+      <span class="menu-item" data-menu="file">Файл</span>
+      <span class="menu-item" data-menu="edit">Правка</span>
+      <span class="menu-item" data-menu="view">Вид</span>
+      <span class="menu-item" data-menu="help">Справка</span>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <button class="tool-btn" id="backBtn" title="Назад">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+      </button>
+      <button class="tool-btn" id="forwardBtn" title="Вперёд">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+      <button class="tool-btn" id="upBtn" title="Вверх">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+      </button>
+      <div class="toolbar-separator"></div>
+      <div class="address-bar-wrap">
+        <span class="address-label">Адрес:</span>
+        <div class="address-bar" id="addressBar">Мой компьютер</div>
+      </div>
+      <div class="toolbar-separator"></div>
+      <button class="tool-btn" id="viewToggleBtn" title="Вид">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- STATUS / BREADCRUMB -->
+    <div class="breadcrumb" id="breadcrumb">
+      <span class="crumb active" data-path="">🖥️ Мой компьютер</span>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+
+      <!-- LEFT PANEL -->
+      <div class="left-panel" id="leftPanel">
+        <div class="left-section-title">Папки</div>
+        <div class="tree" id="folderTree"></div>
+        <div class="left-section-title" style="margin-top:12px">Задачи</div>
+        <div class="task-list">
+          <div class="task-item" id="taskNewFolder">📁 Новая папка</div>
+          <div class="task-item" id="taskNewFile">📄 Новый файл</div>
+          <div class="task-item" id="taskDelete">🗑️ Удалить</div>
+          <div class="task-item" id="taskRename">✏️ Переименовать</div>
+          <div class="task-item" id="taskProperties">ℹ️ Свойства</div>
+        </div>
+        <div class="left-section-title" style="margin-top:12px">Детали</div>
+        <div class="details-panel" id="detailsPanel">
+          <div class="detail-icon" id="detailIcon">🖥️</div>
+          <div class="detail-name" id="detailName">Мой компьютер</div>
+          <div class="detail-info" id="detailInfo"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL / FILE VIEW -->
+      <div class="right-panel" id="rightPanel">
+        <div class="file-grid" id="fileGrid"></div>
+        <div class="empty-hint" id="emptyHint" style="display:none">
+          Папка пуста.<br>Нажмите <b>«Новая папка»</b> или <b>«Новый файл»</b>.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+      <span id="statusText">Готово</span>
+      <span id="statusCount"></span>
+    </div>
+
+  </div>
+
+  <!-- CONTEXT MENU -->
+  <div class="context-menu" id="contextMenu" style="display:none">
+    <div class="ctx-item" data-action="open">📂 Открыть</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="newFolder">📁 Новая папка</div>
+    <div class="ctx-item" data-action="newFile">📄 Новый файл</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="rename">✏️ Переименовать</div>
+    <div class="ctx-item" data-action="delete">🗑️ Удалить</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="properties">ℹ️ Свойства</div>
+  </div>
+
+  <!-- MODAL OVERLAY -->
+  <div class="modal-overlay" id="modalOverlay" style="display:none">
+
+    <!-- TEXT EDITOR -->
+    <div class="modal editor-modal" id="editorModal" style="display:none">
+      <div class="modal-title-bar">
+        <div class="modal-icon">📄</div>
+        <span class="modal-title" id="editorTitle">Безымянный.txt</span>
+        <div class="modal-controls">
+          <button class="tb-btn tb-close" id="editorClose">✕</button>
+        </div>
+      </div>
+      <div class="editor-toolbar">
+        <button class="editor-btn" id="editorSave">💾 Сохранить</button>
+        <button class="editor-btn" id="editorSaveAs">📁 Сохранить как...</button>
+        <select class="editor-select" id="editorFontSize">
+          <option value="12">12px</option>
+          <option value="14" selected>14px</option>
+          <option value="16">16px</option>
+          <option value="18">18px</option>
+          <option value="20">20px</option>
+        </select>
+        <select class="editor-select" id="editorWrap">
+          <option value="on">Перенос: Вкл</option>
+          <option value="off">Перенос: Выкл</option>
+        </select>
+        <span class="editor-status" id="editorStatus">✓ Сохранено</span>
+      </div>
+      <textarea class="editor-area" id="editorArea" spellcheck="false"></textarea>
+      <div class="editor-footer">
+        <span id="editorLines">Строк: 1</span>
+        <span id="editorChars">Символов: 0</span>
+        <span id="editorPath"></span>
+      </div>
+    </div>
+
+    <!-- INPUT DIALOG -->
+    <div class="modal dialog-modal" id="dialogModal" style="display:none">
+      <div class="modal-title-bar">
+        <span class="modal-title" id="dialogTitle">Создать папку</span>
+        <button class="tb-btn tb-close" id="dialogClose">✕</button>
+      </div>
+      <div class="dialog-body">
+        <label class="dialog-label" id="dialogLabel">Имя папки:</label>
+        <input class="dialog-input" id="dialogInput" type="text" autocomplete="off" />
+        <div class="dialog-ext-row" id="dialogExtRow" style="display:none">
+          <label class="dialog-label">Расширение:</label>
+          <select class="editor-select" id="dialogExt">
+            <option value=".txt">.txt</option>
+            <option value=".json">.json</option>
+            <option value=".html">.html</option>
+            <option value=".js">.js</option>
+            <option value=".css">.css</option>
+            <option value=".md">.md</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-btn primary" id="dialogOk">OK</button>
+        <button class="dialog-btn" id="dialogCancel">Отмена</button>
+      </div>
+    </div>
+
+    <!-- PROPERTIES DIALOG -->
+    <div class="modal dialog-modal" id="propsModal" style="display:none">
+      <div class="modal-title-bar">
+        <span class="modal-title">Свойства</span>
+        <button class="tb-btn tb-close" id="propsClose">✕</button>
+      </div>
+      <div class="props-body" id="propsBody"></div>
+      <div class="dialog-footer">
+        <button class="dialog-btn primary" id="propsOk">OK</button>
+      </div>
+    </div>
+
+    <!-- MESSAGE DIALOG -->
+    <div class="modal dialog-modal small" id="msgModal" style="display:none">
+      <div class="modal-title-bar">
+        <span class="modal-title" id="msgTitle">Сообщение</span>
+        <button class="tb-btn tb-close" id="msgClose">✕</button>
+      </div>
+      <div class="msg-body" id="msgBody"></div>
+      <div class="dialog-footer">
+        <button class="dialog-btn primary" id="msgYes">Да</button>
+        <button class="dialog-btn" id="msgNo">Нет</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- START MENU (simple) -->
+  <div class="start-menu" id="startMenu" style="display:none">
+    <div class="start-header">
+      <div class="start-user">👤 Пользователь</div>
+    </div>
+    <div class="start-items">
+      <div class="start-item" id="smMyComputer">🖥️ Мой компьютер</div>
+      <div class="start-item" id="smNewFolder">📁 Новая папка</div>
+      <div class="start-item" id="smNewFile">📄 Новый файл</div>
+      <div class="start-sep"></div>
+      <div class="start-item" id="smAbout">ℹ️ О программе</div>
+    </div>
+    <div class="start-footer">
+      <div class="start-item warn" id="smClear">⚠️ Очистить всё</div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
