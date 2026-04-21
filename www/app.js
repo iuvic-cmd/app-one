@@ -962,3 +962,41 @@ if (window.Capacitor) {
 ═══════════════════════════════════════════════ */
 render();
 console.log('🖥️ My Computer — Loaded. FS version 1.0');
+
+// ── IMPORT FIX ──
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.id = 'realImportInput';
+  inp.multiple = true;
+  inp.accept = '.txt,.json,.html,.js,.css,.md,.csv';
+  inp.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;width:1px;height:1px;';
+  document.body.appendChild(inp);
+
+  inp.addEventListener('change', async function() {
+    if (!currentPath.length) { showMsg('Импорт','Откройте папку сначала.','OK'); return; }
+    const parent = getNode(currentPath);
+    if (!parent || !parent.children) { showMsg('Импорт','Выберите папку внутри диска.','OK'); return; }
+    let count = 0;
+    for (const file of Array.from(inp.files)) {
+      try {
+        const text = await file.text();
+        const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '.txt';
+        const now = Date.now();
+        let name = file.name;
+        if (parent.children[name]) name = name.replace(ext, '_copy' + ext);
+        parent.children[name] = { type:'file', ext, created:now, modified:now, content:text };
+        count++;
+      } catch(e) {}
+    }
+    if (count > 0) { saveFS(); render(); showMsg('Импорт','✅ Импортировано: ' + count + ' файл(ов)','OK'); }
+    inp.value = '';
+  });
+
+  document.getElementById('importBtn').onclick = function(e) {
+    e.preventDefault(); e.stopPropagation();
+    document.getElementById('realImportInput').click();
+  };
+  var ti = document.getElementById('taskImport');
+  if (ti) ti.onclick = function() { document.getElementById('realImportInput').click(); };
+});
