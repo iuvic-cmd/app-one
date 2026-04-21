@@ -1,953 +1,254 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Renault Scenic III — Журнал ТО</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg-primary: #0B0E11;
-  --bg-card: #13171C;
-  --bg-input: #0B0E11;
-  --bg-hover: #1A1F25;
-  --border: #1E2328;
-  --border-light: #2A2F36;
-  --text-primary: #E8ECEF;
-  --text-secondary: #8B9299;
-  --text-muted: #6B7280;
-  --accent: #EFBF04;
-  --accent-hover: #F4D03F;
-  --accent-dark: #D4A017;
-  --danger: #FF2D55;
-  --warning: #FF9500;
-  --success: #34C759;
-  --font-main: 'Montserrat', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --radius: 10px;
-  --radius-sm: 7px;
-  --radius-pill: 20px;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: var(--font-main);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.app { max-width: 860px; margin: 0 auto; padding-bottom: 40px; }
-
-/* ═══════ HEADER ═══════ */
-.header {
-  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-primary) 100%);
-  border-bottom: 1px solid var(--border);
-  padding-top: 18px;
-  position: sticky; top: 0; z-index: 50;
-}
-.header-top {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0 18px 10px; gap: 10px;
-}
-.logo-block { display: flex; align-items: center; gap: 10px; }
-.diamond {
-  width: 36px; height: 36px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  transform: rotate(45deg);
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 5px; flex-shrink: 0;
-}
-.diamond span { transform: rotate(-45deg); font-size: 14px; color: var(--bg-primary); font-weight: 800; }
-.brand { font-size: 14px; font-weight: 800; letter-spacing: .08em; color: #F5F5F5; }
-.subtitle { font-size: 9px; color: var(--text-muted); letter-spacing: .03em; text-transform: uppercase; margin-top: 1px; }
-
-.header-actions { display: flex; gap: 6px; align-items: center; }
-.btn-add {
-  background: var(--accent); color: var(--bg-primary); border: none;
-  border-radius: var(--radius-sm); padding: 8px 14px;
-  font-weight: 700; font-size: 12px; cursor: pointer;
-  font-family: var(--font-main); transition: background .2s;
-}
-.btn-add:hover { background: var(--accent-hover); }
-.btn-reset {
-  background: transparent; color: var(--text-secondary);
-  border: 1px solid var(--border-light); border-radius: var(--radius-sm);
-  padding: 8px 10px; font-size: 11px; cursor: pointer; transition: background .2s;
-}
-.btn-reset:hover { background: var(--border-light); }
-
-/* ═══════ CONTROLS BAR ═══════ */
-.controls-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 18px 8px; gap: 10px; flex-wrap: wrap;
-}
-.mileage-group { display: flex; align-items: center; gap: 8px; }
-.mileage-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
-.mileage-btn {
-  background: var(--bg-hover); border: 1px solid var(--border-light);
-  border-radius: 6px; padding: 4px 10px; color: var(--accent);
-  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all .2s;
-}
-.mileage-btn:hover { border-color: var(--accent); }
-
-.toggle-group {
-  display: flex; background: var(--bg-hover); border-radius: 6px;
-  border: 1px solid var(--border-light); overflow: hidden;
-}
-.toggle-btn {
-  background: none; border: none; padding: 5px 11px;
-  color: var(--text-muted); font-size: 10px; font-weight: 600;
-  cursor: pointer; transition: all .2s; font-family: var(--font-main);
-}
-.toggle-btn.active { background: var(--accent); color: var(--bg-primary); }
-
-/* ═══════ DRIVING MODE ═══════ */
-.mode-bar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 4px 18px 8px; flex-wrap: wrap;
-}
-.mode-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
-.mode-group {
-  display: flex; background: var(--bg-hover); border-radius: 6px;
-  border: 1px solid var(--border-light); overflow: hidden;
-}
-.mode-btn {
-  background: none; border: none; padding: 5px 12px;
-  color: var(--text-muted); font-size: 10px; font-weight: 600;
-  cursor: pointer; transition: all .2s; font-family: var(--font-main);
-  white-space: nowrap;
-}
-.mode-btn.active { background: #2980B9; color: #fff; }
-.mode-hint {
-  font-size: 9px; color: var(--text-muted); font-style: italic;
-  padding: 0 18px 6px;
-}
-
-/* ═══════ ALERT STRIP ═══════ */
-.alert-strip { display: flex; gap: 6px; padding: 0 18px 8px; flex-wrap: wrap; }
-.alert-badge {
-  font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 16px;
-}
-.alert-overdue { background: #FF2D5520; color: var(--danger); }
-.alert-soon { background: #FF950020; color: var(--warning); }
-.alert-unknown { background: #8B929920; color: var(--text-secondary); }
-
-/* ═══════ TABS ═══════ */
-.tabs {
-  display: flex; padding: 0 18px; gap: 2px;
-  border-top: 1px solid var(--border);
-}
-.tab {
-  flex: 1; background: none; border: none;
-  padding: 12px 0; color: var(--text-muted);
-  font-size: 11px; font-weight: 600; cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all .2s; position: relative;
-  font-family: var(--font-main);
-}
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab-badge {
-  position: absolute; top: 5px; right: 18%;
-  background: var(--danger); color: #fff;
-  font-size: 8px; font-weight: 800; border-radius: 8px;
-  padding: 1px 4px; min-width: 14px; text-align: center;
-}
-
-/* ═══════ CONTENT ═══════ */
-.content { padding: 16px 18px; }
-
-/* ═══════ CHIPS ═══════ */
-.chips { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 14px; }
-.chip {
-  background: var(--bg-hover); border: 1px solid var(--border-light);
-  border-radius: 16px; padding: 4px 10px; color: var(--text-secondary);
-  font-size: 10px; font-weight: 600; cursor: pointer;
-  transition: all .15s; font-family: var(--font-main);
-}
-.chip.active { background: var(--accent); color: var(--bg-primary); border-color: var(--accent); }
-
-/* ═══════ SERVICE CARD ═══════ */
-.svc-list { display: flex; flex-direction: column; gap: 8px; }
-.svc-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 14px;
-  cursor: pointer; transition: all .15s;
-  animation: slideIn .3s ease both;
-}
-.svc-card:hover { border-color: var(--border-light); }
-.svc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.svc-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
-.status-badge {
-  font-size: 8px; font-weight: 800; padding: 2px 7px;
-  border-radius: 8px; letter-spacing: .04em; text-transform: uppercase;
-}
-.status-overdue { background: #FF2D5518; color: var(--danger); animation: blink 1.5s infinite; }
-.status-soon { background: #FF950018; color: var(--warning); }
-.status-upcoming { background: #EFBF0418; color: var(--accent); }
-.status-ok { background: #34C75918; color: var(--success); }
-.status-unknown { background: #8B929918; color: var(--text-secondary); }
-
-.priority-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
-.svc-group-label { font-size: 10px; color: var(--text-muted); }
-.svc-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.svc-right { text-align: right; flex-shrink: 0; }
-.svc-km {
-  font-size: 12px; font-family: var(--font-mono); font-weight: 600;
-}
-.svc-interval { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-
-.progress-track {
-  height: 3px; background: var(--border); border-radius: 2px;
-  overflow: hidden; margin-top: 8px;
-}
-.progress-fill {
-  height: 100%; border-radius: 2px; transition: width .6s ease;
-}
-
-.svc-expanded {
-  margin-top: 14px; border-top: 1px solid var(--border);
-  padding-top: 14px; animation: fadeIn .2s;
-}
-.svc-note {
-  font-size: 11px; color: var(--accent-dark); line-height: 1.5;
-  padding: 8px 10px; background: #EFBF0408;
-  border-radius: 6px; margin-bottom: 10px;
-  border-left: 3px solid var(--accent);
-}
-.svc-details { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-.svc-detail { display: flex; gap: 6px; font-size: 11px; color: #C8CDD2; flex-wrap: wrap; }
-.svc-detail-label { color: var(--text-muted); min-width: 130px; flex-shrink: 0; }
-.btn-mark-done {
-  background: var(--bg-hover); border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm); padding: 7px 14px;
-  color: var(--success); font-size: 11px; font-weight: 600;
-  cursor: pointer; width: 100%; transition: all .2s;
-  font-family: var(--font-main);
-}
-.btn-mark-done:hover { background: var(--border-light); }
-
-/* ═══════ RECORDS ═══════ */
-.filters-bar { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
-.search-input {
-  flex: 2; min-width: 120px; background: var(--bg-card);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 8px 10px; color: var(--text-primary); font-size: 11px; outline: none;
-  font-family: var(--font-main);
-}
-.filter-select {
-  flex: 1; min-width: 80px; background: var(--bg-card);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 8px 8px; color: var(--text-primary); font-size: 10px;
-  outline: none; cursor: pointer; font-family: var(--font-main);
-}
-
-.records-list { display: flex; flex-direction: column; gap: 7px; }
-.record {
-  background: var(--bg-card); border-radius: 9px;
-  padding: 12px 14px; cursor: pointer;
-  border: 1px solid var(--border); transition: all .15s;
-  animation: slideIn .3s ease both;
-}
-.record:hover { border-color: var(--border-light); }
-.record-main { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.cat-badge {
-  display: inline-block; font-size: 9px; font-weight: 600;
-  padding: 2px 7px; border-radius: 14px;
-}
-.record-link { font-size: 10px; color: var(--text-muted); margin-left: 6px; }
-.record-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
-.record-notes {
-  font-size: 12px; color: var(--text-secondary); margin-top: 8px;
-  padding: 8px 12px; background: var(--bg-primary); border-radius: 6px;
-  line-height: 1.5; animation: fadeIn .2s;
-}
-.record-cost {
-  font-size: 14px; font-weight: 700; font-family: var(--font-mono); color: var(--accent);
-}
-.record-date { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-.record-actions { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; animation: fadeIn .2s; }
-.btn-edit, .btn-delete {
-  background: var(--border); border: 1px solid var(--border-light);
-  border-radius: 5px; padding: 4px 9px; font-size: 10px; cursor: pointer;
-}
-.btn-edit { color: var(--text-primary); }
-.btn-delete { color: var(--danger); }
-
-.empty { text-align: center; padding: 50px 20px; }
-.empty-icon { font-size: 36px; margin-bottom: 10px; }
-.empty-text { color: var(--text-secondary); }
-
-/* ═══════ STATS ═══════ */
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-.stat-box {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 9px; padding: 14px;
-}
-.stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
-.stat-value { font-size: 20px; font-weight: 800; font-family: var(--font-mono); margin-top: 4px; }
-.cat-stats-list { display: flex; flex-direction: column; gap: 7px; }
-.cat-stat-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 9px; padding: 12px 14px;
-}
-.section-title {
-  font-size: 12px; font-weight: 700; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px;
-}
-
-/* ═══════ MODAL ═══════ */
-.overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.7);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 100; animation: fadeIn .2s; padding: 16px;
-}
-.modal {
-  background: var(--bg-card); border: 1px solid var(--border-light);
-  border-radius: 12px; width: 100%; max-width: 500px;
-  max-height: 90vh; overflow: auto; animation: scaleIn .25s ease;
-}
-.mini-modal {
-  background: var(--bg-card); border: 1px solid var(--border-light);
-  border-radius: 12px; padding: 20px; width: 100%; max-width: 300px;
-  animation: scaleIn .25s ease;
-}
-.modal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 18px; border-bottom: 1px solid var(--border);
-}
-.modal-title { font-size: 15px; font-weight: 700; }
-.btn-close {
-  background: none; border: none; color: var(--text-muted);
-  font-size: 16px; cursor: pointer;
-}
-.form-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 10px; padding: 14px 18px;
-}
-.field { display: flex; flex-direction: column; gap: 4px; }
-.field-full { grid-column: 1 / -1; }
-.field label {
-  font-size: 9px; font-weight: 600; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: .04em;
-}
-.field input, .field select, .field textarea {
-  background: var(--bg-input); border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm); padding: 8px 10px;
-  color: var(--text-primary); font-size: 12px; outline: none;
-  width: 100%; font-family: var(--font-main);
-}
-.field textarea { min-height: 55px; resize: vertical; }
-.modal-footer {
-  display: flex; justify-content: flex-end; gap: 8px;
-  padding: 12px 18px; border-top: 1px solid var(--border);
-}
-.btn-cancel {
-  background: none; border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm); padding: 8px 16px;
-  color: var(--text-secondary); font-size: 11px; font-weight: 600;
-  cursor: pointer; font-family: var(--font-main);
-}
-.btn-save {
-  background: var(--accent); border: none;
-  border-radius: var(--radius-sm); padding: 8px 20px;
-  color: var(--bg-primary); font-size: 11px; font-weight: 700;
-  cursor: pointer; transition: all .2s; font-family: var(--font-main);
-}
-.btn-save:hover { background: var(--accent-hover); }
-.btn-save:disabled { opacity: .4; cursor: not-allowed; }
-
-.hidden { display: none !important; }
-
-/* Responsive */
-@media (max-width: 480px) {
-  .header-top { flex-wrap: wrap; }
-  .controls-bar { flex-direction: column; align-items: stretch; }
-  .stats-grid { grid-template-columns: 1fr; }
-  .form-grid { grid-template-columns: 1fr; }
-  .field-full { grid-column: 1; }
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Мой компьютер</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div class="app" id="app">
-  <!-- Header -->
-  <div class="header">
-    <div class="header-top">
-      <div class="logo-block">
-        <div class="diamond"><span>◆</span></div>
-        <div>
-          <div class="brand">RENAULT SCENIC III</div>
-          <div class="subtitle">Журнал ТО и регламент</div>
+  <!-- TASKBAR -->
+  <div class="taskbar">
+    <div class="taskbar-start" id="startBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="2" width="9" height="9" fill="#f25022"/>
+        <rect x="13" y="2" width="9" height="9" fill="#7fba00"/>
+        <rect x="2" y="13" width="9" height="9" fill="#00a4ef"/>
+        <rect x="13" y="13" width="9" height="9" fill="#ffb900"/>
+      </svg>
+    </div>
+    <div class="taskbar-title" id="taskbarTitle">Мой компьютер</div>
+    <div class="taskbar-clock" id="clock"></div>
+  </div>
+
+  <!-- EXPLORER WINDOW -->
+  <div class="explorer-window" id="explorerWindow">
+
+    <!-- TITLE BAR -->
+    <div class="title-bar">
+      <div class="title-bar-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <rect x="2" y="6" width="20" height="14" rx="2" fill="#f0c040" stroke="#d4a020" stroke-width="1.5"/>
+          <path d="M2 10h20" stroke="#d4a020" stroke-width="1"/>
+          <rect x="2" y="6" width="8" height="4" rx="1" fill="#f0c040" stroke="#d4a020" stroke-width="1"/>
+        </svg>
+      </div>
+      <span class="title-bar-text" id="titleBarText">Мой компьютер</span>
+      <div class="title-bar-controls">
+        <button class="tb-btn tb-min" id="minBtn">─</button>
+        <button class="tb-btn tb-max" id="maxBtn">□</button>
+        <button class="tb-btn tb-close" id="closeBtn">✕</button>
+      </div>
+    </div>
+
+    <!-- MENU BAR -->
+    <div class="menu-bar">
+      <span class="menu-item" data-menu="file">Файл</span>
+      <span class="menu-item" data-menu="edit">Правка</span>
+      <span class="menu-item" data-menu="view">Вид</span>
+      <span class="menu-item" data-menu="help">Справка</span>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <button class="tool-btn" id="backBtn" title="Назад">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+      </button>
+      <button class="tool-btn" id="forwardBtn" title="Вперёд">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+      <button class="tool-btn" id="upBtn" title="Вверх">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+      </button>
+      <div class="toolbar-separator"></div>
+      <div class="address-bar-wrap">
+        <span class="address-label">Адрес:</span>
+        <div class="address-bar" id="addressBar">Мой компьютер</div>
+      </div>
+      <div class="toolbar-separator"></div>
+      <button class="tool-btn" id="viewToggleBtn" title="Вид">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- STATUS / BREADCRUMB -->
+    <div class="breadcrumb" id="breadcrumb">
+      <span class="crumb active" data-path="">🖥️ Мой компьютер</span>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+
+      <!-- LEFT PANEL -->
+      <div class="left-panel" id="leftPanel">
+        <div class="left-section-title">Папки</div>
+        <div class="tree" id="folderTree"></div>
+        <div class="left-section-title" style="margin-top:12px">Задачи</div>
+        <div class="task-list">
+          <div class="task-item" id="taskNewFolder">📁 Новая папка</div>
+          <div class="task-item" id="taskNewFile">📄 Новый файл</div>
+          <div class="task-item" id="taskDelete">🗑️ Удалить</div>
+          <div class="task-item" id="taskRename">✏️ Переименовать</div>
+          <div class="task-item" id="taskProperties">ℹ️ Свойства</div>
+        </div>
+        <div class="left-section-title" style="margin-top:12px">Детали</div>
+        <div class="details-panel" id="detailsPanel">
+          <div class="detail-icon" id="detailIcon">🖥️</div>
+          <div class="detail-name" id="detailName">Мой компьютер</div>
+          <div class="detail-info" id="detailInfo"></div>
         </div>
       </div>
-      <div class="header-actions">
-        <button class="btn-reset" id="btnReset" onclick="clearAll()">🗑</button>
-        <button class="btn-add" onclick="openForm()">+ Запись</button>
+
+      <!-- RIGHT PANEL / FILE VIEW -->
+      <div class="right-panel" id="rightPanel">
+        <div class="file-grid" id="fileGrid"></div>
+        <div class="empty-hint" id="emptyHint" style="display:none">
+          Папка пуста.<br>Нажмите <b>«Новая папка»</b> или <b>«Новый файл»</b>.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+      <span id="statusText">Готово</span>
+      <span id="statusCount"></span>
+    </div>
+
+  </div>
+
+  <!-- CONTEXT MENU -->
+  <div class="context-menu" id="contextMenu" style="display:none">
+    <div class="ctx-item" data-action="open">📂 Открыть</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="newFolder">📁 Новая папка</div>
+    <div class="ctx-item" data-action="newFile">📄 Новый файл</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="rename">✏️ Переименовать</div>
+    <div class="ctx-item" data-action="delete">🗑️ Удалить</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="properties">ℹ️ Свойства</div>
+  </div>
+
+  <!-- MODAL OVERLAY -->
+  <div class="modal-overlay" id="modalOverlay" style="display:none">
+
+    <!-- TEXT EDITOR -->
+    <div class="modal editor-modal" id="editorModal" style="display:none">
+      <div class="modal-title-bar">
+        <div class="modal-icon">📄</div>
+        <span class="modal-title" id="editorTitle">Безымянный.txt</span>
+        <div class="modal-controls">
+          <button class="tb-btn tb-close" id="editorClose">✕</button>
+        </div>
+      </div>
+      <div class="editor-toolbar">
+        <button class="editor-btn" id="editorSave">💾 Сохранить</button>
+        <button class="editor-btn" id="editorSaveAs">📁 Сохранить как...</button>
+        <select class="editor-select" id="editorFontSize">
+          <option value="12">12px</option>
+          <option value="14" selected>14px</option>
+          <option value="16">16px</option>
+          <option value="18">18px</option>
+          <option value="20">20px</option>
+        </select>
+        <select class="editor-select" id="editorWrap">
+          <option value="on">Перенос: Вкл</option>
+          <option value="off">Перенос: Выкл</option>
+        </select>
+        <span class="editor-status" id="editorStatus">✓ Сохранено</span>
+      </div>
+      <textarea class="editor-area" id="editorArea" spellcheck="false"></textarea>
+      <div class="editor-footer">
+        <span id="editorLines">Строк: 1</span>
+        <span id="editorChars">Символов: 0</span>
+        <span id="editorPath"></span>
       </div>
     </div>
 
-    <div class="controls-bar">
-      <div class="mileage-group">
-        <span class="mileage-label">Пробег:</span>
-        <button class="mileage-btn" onclick="openMileageModal()" id="mileageDisplay">145 000 km ✏️</button>
+    <!-- INPUT DIALOG -->
+    <div class="modal dialog-modal" id="dialogModal" style="display:none">
+      <div class="modal-title-bar">
+        <span class="modal-title" id="dialogTitle">Создать папку</span>
+        <button class="tb-btn tb-close" id="dialogClose">✕</button>
       </div>
-      <div class="toggle-group" id="engineToggle">
-        <button class="toggle-btn active" data-val="diesel" onclick="setEngine('diesel')">Дизель</button>
-        <button class="toggle-btn" data-val="petrol" onclick="setEngine('petrol')">Бензин</button>
+      <div class="dialog-body">
+        <label class="dialog-label" id="dialogLabel">Имя папки:</label>
+        <input class="dialog-input" id="dialogInput" type="text" autocomplete="off" />
+        <div class="dialog-ext-row" id="dialogExtRow" style="display:none">
+          <label class="dialog-label">Расширение:</label>
+          <select class="editor-select" id="dialogExt">
+            <option value=".txt">.txt</option>
+            <option value=".json">.json</option>
+            <option value=".html">.html</option>
+            <option value=".js">.js</option>
+            <option value=".css">.css</option>
+            <option value=".md">.md</option>
+          </select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="dialog-btn primary" id="dialogOk">OK</button>
+        <button class="dialog-btn" id="dialogCancel">Отмена</button>
       </div>
     </div>
 
-    <div class="mode-bar">
-      <span class="mode-label">Режим:</span>
-      <div class="mode-group" id="modeToggle">
-        <button class="mode-btn active" data-val="city" onclick="setMode('city')">🏙 Город</button>
-        <button class="mode-btn" data-val="mixed" onclick="setMode('mixed')">🔀 Смешанный</button>
-        <button class="mode-btn" data-val="highway" onclick="setMode('highway')">🛣 Трасса</button>
+    <!-- PROPERTIES DIALOG -->
+    <div class="modal dialog-modal" id="propsModal" style="display:none">
+      <div class="modal-title-bar">
+        <span class="modal-title">Свойства</span>
+        <button class="tb-btn tb-close" id="propsClose">✕</button>
+      </div>
+      <div class="props-body" id="propsBody"></div>
+      <div class="dialog-footer">
+        <button class="dialog-btn primary" id="propsOk">OK</button>
       </div>
     </div>
-    <div class="mode-hint" id="modeHint">Город: интервалы сокращены на ~30% (сажа DPF, короткие поездки, пробки)</div>
 
-    <div class="alert-strip" id="alertStrip"></div>
+    <!-- MESSAGE DIALOG -->
+    <div class="modal dialog-modal small" id="msgModal" style="display:none">
+      <div class="modal-title-bar">
+        <span class="modal-title" id="msgTitle">Сообщение</span>
+        <button class="tb-btn tb-close" id="msgClose">✕</button>
+      </div>
+      <div class="msg-body" id="msgBody"></div>
+      <div class="dialog-footer">
+        <button class="dialog-btn primary" id="msgYes">Да</button>
+        <button class="dialog-btn" id="msgNo">Нет</button>
+      </div>
+    </div>
 
-    <div class="tabs">
-      <button class="tab active" data-tab="schedule" onclick="switchTab('schedule')">🔧 Регламент <span class="tab-badge hidden" id="overdueBadge">0</span></button>
-      <button class="tab" data-tab="records" onclick="switchTab('records')">📋 Журнал</button>
-      <button class="tab" data-tab="stats" onclick="switchTab('stats')">📊 Расходы</button>
+  </div>
+
+  <!-- START MENU (simple) -->
+  <div class="start-menu" id="startMenu" style="display:none">
+    <div class="start-header">
+      <div class="start-user">👤 Пользователь</div>
+    </div>
+    <div class="start-items">
+      <div class="start-item" id="smMyComputer">🖥️ Мой компьютер</div>
+      <div class="start-item" id="smNewFolder">📁 Новая папка</div>
+      <div class="start-item" id="smNewFile">📄 Новый файл</div>
+      <div class="start-sep"></div>
+      <div class="start-item" id="smAbout">ℹ️ О программе</div>
+    </div>
+    <div class="start-footer">
+      <div class="start-item warn" id="smClear">⚠️ Очистить всё</div>
     </div>
   </div>
 
-  <div class="content" id="contentArea"></div>
-</div>
-
-<!-- Mileage Modal -->
-<div class="overlay hidden" id="mileageModal" onclick="closeMileageModal()">
-  <div class="mini-modal" onclick="event.stopPropagation()">
-    <div style="font-size:15px;font-weight:700;margin-bottom:14px">Текущий пробег</div>
-    <div class="field">
-      <input type="number" id="mileageInput" style="font-size:20px;text-align:center;font-family:var(--font-mono)">
-    </div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn-cancel" onclick="closeMileageModal()">Отмена</button>
-      <button class="btn-save" style="flex:1" onclick="saveMileage()">OK</button>
-    </div>
-  </div>
-</div>
-
-<!-- Record Form Modal -->
-<div class="overlay hidden" id="formModal" onclick="closeForm()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <span class="modal-title" id="formTitle">Новая запись</span>
-      <button class="btn-close" onclick="closeForm()">✕</button>
-    </div>
-    <div class="form-grid">
-      <div class="field"><label>Дата</label><input type="date" id="fDate"></div>
-      <div class="field"><label>Пробег (km)</label><input type="number" id="fMileage"></div>
-      <div class="field"><label>Категория</label><select id="fCategory"></select></div>
-      <div class="field"><label>Стоимость (lei)</label><input type="number" id="fCost" placeholder="0"></div>
-      <div class="field field-full"><label>Привязка к регламенту</label><select id="fServiceId"></select></div>
-      <div class="field field-full"><label>Описание работ</label><input type="text" id="fTitle" placeholder="Что сделано..."></div>
-      <div class="field field-full"><label>Примечания</label><textarea id="fNotes" placeholder="Артикулы, бренды..."></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeForm()">Отмена</button>
-      <button class="btn-save" id="btnSubmit" onclick="submitForm()">Добавить</button>
-    </div>
-  </div>
-</div>
-
-<script>
-/* ═══════════════════════════════════════════
-   DATA & STATE
-   ═══════════════════════════════════════════ */
-
-const SERVICE_SCHEDULE = [
-  // ENGINE
-  { id:"oil_filter", group:"engine", name:"Моторное масло + масляный фильтр",
-    km:{city:10000,mixed:12000,highway:15000}, mo:{city:9,mixed:12,highway:12},
-    note:"ELF Evolution 900 SXR 5W-30 (дизель) / 5W-40 (бензин). Город: масло быстро насыщается сажей из-за DPF, солярка попадает в масло при прожигах. Оригинальный фильтр 152089599R", priority:"high" },
-  { id:"air_filter", group:"engine", name:"Воздушный фильтр",
-    km:{city:20000,mixed:25000,highway:30000}, mo:{city:18,mixed:24,highway:24},
-    note:"Оригинал 165467674R. В городе забивается быстрее из-за пыли и смога. Проверять каждые 10 000 km", priority:"medium" },
-  { id:"cabin_filter", group:"comfort", name:"Салонный фильтр (пыльцевой)",
-    km:{city:10000,mixed:12000,highway:15000}, mo:{city:9,mixed:12,highway:12},
-    note:"Оригинал 272773016R. Угольный фильтр рекомендуется для города — задерживает выхлопы", priority:"low" },
-  { id:"fuel_filter_diesel", group:"engine", name:"Топливный фильтр (дизель)",
-    km:{city:45000,mixed:50000,highway:60000}, mo:{city:36,mixed:42,highway:48},
-    note:"Оригинал 164039594R (1.5 dCi). Сливать воду каждые 20 000 km. Плохое топливо — менять чаще", priority:"high" },
-  { id:"timing_belt", group:"engine", name:"Ремень ГРМ + ролики + помпа",
-    km:{city:100000,mixed:110000,highway:120000}, mo:{city:60,mixed:66,highway:72},
-    note:"⛔ КРИТИЧНО! Gates K015578XS + помпа. Обрыв = капремонт двигателя. В городе: частые перепады нагрузки ускоряют износ. Менять помпу ВСЕГДА вместе с ремнём!", priority:"critical" },
-  { id:"accessory_belt", group:"engine", name:"Ремень навесного оборудования",
-    km:{city:70000,mixed:80000,highway:90000}, mo:{city:48,mixed:54,highway:60},
-    note:"Оригинал 117206746R. Проверять натяжение и трещины каждые 30 000 km", priority:"medium" },
-  { id:"spark_plugs", group:"engine", name:"Свечи зажигания (бензин)",
-    km:{city:20000,mixed:25000,highway:30000}, mo:{city:24,mixed:30,highway:36},
-    note:"NGK LZKAR7A (1.4 TCe). Город: частые запуски и малые нагрузки ускоряют нагар", priority:"medium" },
-  { id:"glow_plugs", group:"engine", name:"Свечи накаливания (дизель)",
-    km:{city:100000,mixed:110000,highway:120000}, mo:{city:72,mixed:78,highway:84},
-    note:"Bosch GLP 070 (1.5 dCi). Проверять при затруднённом запуске в холода", priority:"low" },
-
-  // BRAKES
-  { id:"brake_fluid", group:"brakes", name:"Тормозная жидкость",
-    km:{city:40000,mixed:50000,highway:60000}, mo:{city:18,mixed:24,highway:24},
-    note:"DOT 4+ (ELF 650 DOT 4). Гигроскопична — менять по сроку! Город: частое торможение = больший нагрев", priority:"high" },
-  { id:"brake_pads_front", group:"brakes", name:"Передние тормозные колодки",
-    km:{city:25000,mixed:35000,highway:45000}, mo:{city:24,mixed:30,highway:42},
-    note:"Мин. толщина 2 мм. Brembo P68 024 / TRW GDB1789. Город: износ в 1.5-2 раза быстрее!", priority:"high" },
-  { id:"brake_pads_rear", group:"brakes", name:"Задние тормозные колодки",
-    km:{city:45000,mixed:55000,highway:65000}, mo:{city:36,mixed:42,highway:54},
-    note:"Brembo P68 050. При замене чистить направляющие суппортов", priority:"medium" },
-  { id:"brake_discs_front", group:"brakes", name:"Передние тормозные диски",
-    km:{city:55000,mixed:65000,highway:80000}, mo:{city:48,mixed:54,highway:66},
-    note:"Мин. толщина 22 мм (ном. 24). Brembo 09.A820.11. Менять парой!", priority:"medium" },
-  { id:"brake_discs_rear", group:"brakes", name:"Задние тормозные диски",
-    km:{city:80000,mixed:90000,highway:110000}, mo:{city:60,mixed:66,highway:78},
-    note:"Мин. толщина 8 мм (ном. 10.6). Менять вместе с колодками при критическом износе", priority:"low" },
-
-  // COOLING
-  { id:"coolant", group:"cooling", name:"Охлаждающая жидкость (антифриз)",
-    km:{city:75000,mixed:80000,highway:90000}, mo:{city:42,mixed:48,highway:48},
-    note:"ТОЛЬКО Glaceol RX Type D (зелёный). Не смешивать! Город: перегрев в пробках — проверять уровень каждые 5 000 km", priority:"high" },
-
-  // TRANSMISSION
-  { id:"transmission_manual", group:"transmission", name:"Масло МКПП",
-    km:{city:70000,mixed:80000,highway:90000}, mo:{city:60,mixed:66,highway:72},
-    note:"ELF Tranself NFJ 75W-80 (TL4/JR5). Нет щупа — заливать по уровень пробки", priority:"medium" },
-  { id:"transmission_auto", group:"transmission", name:"Масло АКПП / EDC (робот)",
-    km:{city:45000,mixed:55000,highway:60000}, mo:{city:36,mixed:42,highway:48},
-    note:"ELF Renaultmatic D3 SYN (DP0) / Elfmatic CVT (EDC DC4). Город: повышенная нагрузка на АКПП в пробках", priority:"high" },
-
-  // SUSPENSION
-  { id:"front_stabilizer_links", group:"suspension", name:"Стойки переднего стабилизатора",
-    km:{city:45000,mixed:55000,highway:65000}, mo:{city:36,mixed:42,highway:54},
-    note:"Lemförder 37576 01. Стук на неровностях, особенно при повороте руля", priority:"medium" },
-  { id:"front_lower_arms", group:"suspension", name:"Передние рычаги + сайлентблоки",
-    km:{city:80000,mixed:90000,highway:110000}, mo:{city:60,mixed:66,highway:78},
-    note:"Lemförder / TRW. Проверять люфт и сайлентблоки каждые 30 000 km", priority:"medium" },
-  { id:"front_shock_absorbers", group:"suspension", name:"Передние амортизаторы",
-    km:{city:60000,mixed:70000,highway:90000}, mo:{city:48,mixed:54,highway:66},
-    note:"Monroe / KYB. Менять парой. Подтёки масла, раскачка, неравномерный износ шин = замена", priority:"medium" },
-  { id:"rear_shock_absorbers", group:"suspension", name:"Задние амортизаторы",
-    km:{city:80000,mixed:90000,highway:110000}, mo:{city:60,mixed:66,highway:78},
-    note:"Monroe / KYB. Проверять опорные подушки при замене", priority:"low" },
-  { id:"wheel_bearings", group:"suspension", name:"Ступичные подшипники",
-    km:{city:100000,mixed:110000,highway:130000}, mo:{city:84,mixed:90,highway:102},
-    note:"SNR R155.75 (передние). Гул при движении, усиливается в повороте", priority:"medium" },
-
-  // ELECTRICAL
-  { id:"battery", group:"electrical", name:"Аккумулятор",
-    km:{city:120000,mixed:130000,highway:150000}, mo:{city:42,mixed:48,highway:54},
-    note:"70Ah 720A (L3). Varta Blue Dynamic E11. Город: короткие поездки = недозаряд. Проверять перед зимой", priority:"medium" },
-
-  // COMFORT
-  { id:"wiper_blades", group:"comfort", name:"Щётки стеклоочистителя",
-    km:{city:15000,mixed:18000,highway:20000}, mo:{city:10,mixed:12,highway:12},
-    note:"26\" + 16\" (боковой штырь). Bosch Aerotwin AR604S", priority:"low" },
-  { id:"ac_service", group:"comfort", name:"Обслуживание кондиционера",
-    km:{city:50000,mixed:55000,highway:60000}, mo:{city:20,mixed:24,highway:24},
-    note:"Заправка R134a (~500 г) + масло PAG. Антибактериальная обработка. Город: кондиционер работает чаще", priority:"low" },
-
-  // TIRES
-  { id:"tire_rotation", group:"tires", name:"Перестановка / балансировка",
-    km:{city:10000,mixed:12000,highway:15000}, mo:{city:10,mixed:12,highway:12},
-    note:"Давление: перед 2.3, зад 2.1 бар (загруж. 2.5/2.5). Город: неровности = чаще балансировка", priority:"low" },
-  { id:"tire_replacement", group:"tires", name:"Замена шин (по износу)",
-    km:{city:40000,mixed:45000,highway:55000}, mo:{city:42,mixed:48,highway:54},
-    note:"205/55 R16 или 205/60 R16. Мин. протектор 1.6 мм (менять при 3 мм). Не старше 5 лет", priority:"medium" },
-];
-
-const GROUPS = {
-  engine:       { label:"Двигатель",   icon:"🏎️", color:"#E74C3C" },
-  brakes:       { label:"Тормоза",     icon:"🔴", color:"#C0392B" },
-  cooling:      { label:"Охлаждение",  icon:"❄️", color:"#1ABC9C" },
-  transmission: { label:"Трансмиссия", icon:"⚙️", color:"#8E44AD" },
-  suspension:   { label:"Подвеска",    icon:"🔧", color:"#2980B9" },
-  electrical:   { label:"Электрика",   icon:"⚡", color:"#F39C12" },
-  tires:        { label:"Шины",        icon:"🔘", color:"#7F8C8D" },
-  comfort:      { label:"Комфорт",     icon:"🚿", color:"#3498DB" },
-};
-
-const CATEGORIES = [
-  {id:"oil",label:"Масло и фильтры",icon:"🛢️",color:"#D4A017"},
-  {id:"brakes",label:"Тормозная система",icon:"🔴",color:"#C0392B"},
-  {id:"suspension",label:"Подвеска",icon:"🔧",color:"#2980B9"},
-  {id:"electrical",label:"Электрика",icon:"⚡",color:"#F39C12"},
-  {id:"cooling",label:"Охлаждение",icon:"❄️",color:"#1ABC9C"},
-  {id:"transmission",label:"Трансмиссия",icon:"⚙️",color:"#8E44AD"},
-  {id:"body",label:"Кузов",icon:"🚗",color:"#34495E"},
-  {id:"tires",label:"Шины и диски",icon:"🔘",color:"#7F8C8D"},
-  {id:"engine",label:"Двигатель",icon:"🏎️",color:"#E74C3C"},
-  {id:"comfort",label:"Комфорт",icon:"🚿",color:"#3498DB"},
-  {id:"other",label:"Прочее",icon:"📋",color:"#95A5A6"},
-];
-
-const PRIORITY_COLORS = {critical:"#FF2D55",high:"#FF9500",medium:"#EFBF04",low:"#6B7280"};
-const STATUS_MAP = {
-  overdue: {label:"ПРОСРОЧЕНО",cls:"status-overdue"},
-  soon:    {label:"СКОРО",     cls:"status-soon"},
-  upcoming:{label:"ПРИБЛИЖАЕТСЯ",cls:"status-upcoming"},
-  ok:      {label:"В НОРМЕ",   cls:"status-ok"},
-  unknown: {label:"НЕТ ДАННЫХ",cls:"status-unknown"},
-};
-const MODE_HINTS = {
-  city:    "Город: интервалы сокращены ~30% (сажа DPF, короткие поездки, пробки, частые торможения)",
-  mixed:   "Смешанный: стандартные интервалы для комбинированного режима город/трасса",
-  highway: "Трасса: максимальные интервалы при стабильных оборотах и хорошем топливе",
-};
-
-// State
-let state = {
-  records: [
-    {id:1,date:"2025-12-15",mileage:142300,category:"oil",title:"Замена масла + масляный фильтр",cost:1200,notes:"ELF Evolution 900 SXR 5W-30, оригинальный фильтр",serviceId:"oil_filter"},
-    {id:2,date:"2025-11-20",mileage:140100,category:"brakes",title:"Замена передних тормозных колодок",cost:1850,notes:"Brembo P 68 024",serviceId:"brake_pads_front"},
-    {id:3,date:"2025-10-05",mileage:138500,category:"tires",title:"Перебортировка на зимнюю резину",cost:800,notes:"Michelin Alpin 6 205/55 R16",serviceId:"tire_rotation"},
-    {id:4,date:"2025-08-12",mileage:135200,category:"cooling",title:"Замена антифриза",cost:650,notes:"Glaceol RX Type D",serviceId:"coolant"},
-    {id:5,date:"2025-06-01",mileage:130000,category:"suspension",title:"Замена передних стоек стабилизатора",cost:1500,notes:"Lemförder 37576 01",serviceId:"front_stabilizer_links"},
-    {id:6,date:"2024-09-10",mileage:118000,category:"engine",title:"Ремень ГРМ + помпа + ролики",cost:8500,notes:"Gates K015578XS, полный комплект",serviceId:"timing_belt"},
-  ],
-  currentMileage: 145000,
-  engineType: "diesel",
-  driveMode: "city",
-  activeTab: "schedule",
-  editingId: null,
-  expandedSvcId: null,
-  expandedRecId: null,
-  scheduleFilter: "all",
-  filterCat: "all",
-  sortBy: "date",
-  searchQuery: "",
-};
-
-/* ═══════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════ */
-const fmtDate = d => new Date(d).toLocaleDateString("ru-RU",{day:"numeric",month:"short",year:"numeric"});
-const fmtCost = n => n.toLocaleString("ro-MD") + " lei";
-const fmtKm = n => n.toLocaleString("ro-MD") + " km";
-const fmtK = n => n.toLocaleString("ro-MD");
-
-function getSchedule() {
-  return SERVICE_SCHEDULE.filter(s => {
-    if (state.engineType === "diesel" && s.id === "spark_plugs") return false;
-    if (state.engineType === "petrol" && (s.id === "glow_plugs" || s.id === "fuel_filter_diesel")) return false;
-    return true;
-  });
-}
-
-function getStatuses() {
-  const today = new Date().toISOString().slice(0,10);
-  const mode = state.driveMode;
-  return getSchedule().map(svc => {
-    const kmInt = svc.km[mode], moInt = svc.mo[mode];
-    const recs = state.records.filter(r => r.serviceId === svc.id).sort((a,b) => new Date(b.date)-new Date(a.date));
-    const last = recs[0] || null;
-    const kmSince = last ? state.currentMileage - last.mileage : state.currentMileage;
-    const daysSince = last ? Math.round((new Date(today)-new Date(last.date))/86400000) : 9999;
-    const moSince = daysSince / 30.44;
-    const kmRem = last ? kmInt - (state.currentMileage - last.mileage) : 0;
-    const moRem = last ? moInt - moSince : 0;
-    let status = "ok", urgency = 0;
-    if (kmRem <= 0 || moRem <= 0) { status = "overdue"; urgency = 3; }
-    else if (kmRem <= kmInt*.15 || moRem <= moInt*.15) { status = "soon"; urgency = 2; }
-    else if (kmRem <= kmInt*.3 || moRem <= moInt*.3) { status = "upcoming"; urgency = 1; }
-    if (!last) { status = "unknown"; urgency = 2; }
-    const nextKm = last ? last.mileage + kmInt : state.currentMileage;
-    const nextDate = last ? new Date(new Date(last.date).getTime() + moInt*30.44*86400000).toISOString().slice(0,10) : today;
-    return {...svc, kmInterval:kmInt, monthInterval:moInt, last, kmRemaining:kmRem, monthsRemaining:Math.round(moRem), status, urgency, nextAtKm:nextKm, nextByDate:nextDate, kmSinceLast:kmSince, daysSinceLast:daysSince};
-  });
-}
-
-/* ═══════════════════════════════════════════
-   RENDER
-   ═══════════════════════════════════════════ */
-function render() {
-  const statuses = getStatuses();
-  const overdueN = statuses.filter(s=>s.status==="overdue").length;
-  const soonN = statuses.filter(s=>s.status==="soon").length;
-  const unknownN = statuses.filter(s=>s.status==="unknown").length;
-
-  // Mileage display
-  document.getElementById("mileageDisplay").textContent = fmtKm(state.currentMileage) + " ✏️";
-
-  // Reset button
-  document.getElementById("btnReset").classList.toggle("hidden", state.records.length === 0);
-
-  // Mode hint
-  document.getElementById("modeHint").textContent = MODE_HINTS[state.driveMode];
-
-  // Alerts
-  let alertHTML = "";
-  if (overdueN) alertHTML += `<span class="alert-badge alert-overdue">⚠️ ${overdueN} просрочено</span>`;
-  if (soonN) alertHTML += `<span class="alert-badge alert-soon">⏰ ${soonN} скоро</span>`;
-  if (unknownN) alertHTML += `<span class="alert-badge alert-unknown">❓ ${unknownN} нет данных</span>`;
-  document.getElementById("alertStrip").innerHTML = alertHTML;
-
-  // Overdue badge
-  const badge = document.getElementById("overdueBadge");
-  if (overdueN > 0) { badge.textContent = overdueN; badge.classList.remove("hidden"); }
-  else badge.classList.add("hidden");
-
-  // Tabs
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === state.activeTab));
-
-  // Engine toggle
-  document.querySelectorAll("#engineToggle .toggle-btn").forEach(b => b.classList.toggle("active", b.dataset.val === state.engineType));
-
-  // Mode toggle
-  document.querySelectorAll("#modeToggle .mode-btn").forEach(b => b.classList.toggle("active", b.dataset.val === state.driveMode));
-
-  // Content
-  const area = document.getElementById("contentArea");
-  if (state.activeTab === "schedule") renderSchedule(area, statuses);
-  else if (state.activeTab === "records") renderRecords(area);
-  else renderStats(area);
-}
-
-function renderSchedule(area, statuses) {
-  const filtered = statuses
-    .filter(s => state.scheduleFilter==="all" ? true : state.scheduleFilter==="attention" ? ["overdue","soon","unknown"].includes(s.status) : s.group===state.scheduleFilter)
-    .sort((a,b) => b.urgency-a.urgency || a.kmRemaining-b.kmRemaining);
-
-  const chips = [{id:"all",l:"Все"},{id:"attention",l:"⚠️ Внимание"},
-    ...Object.entries(GROUPS).map(([id,g])=>({id,l:g.icon+" "+g.label}))];
-
-  let html = `<div class="chips">${chips.map(c=>`<button class="chip ${state.scheduleFilter===c.id?"active":""}" onclick="setSchedFilter('${c.id}')">${c.l}</button>`).join("")}</div>`;
-  html += `<div class="svc-list">`;
-
-  filtered.forEach((svc,i) => {
-    const st = STATUS_MAP[svc.status], grp = GROUPS[svc.group];
-    const pct = svc.last ? Math.min(100, Math.max(0, (svc.kmSinceLast/svc.kmInterval)*100)) : 100;
-    const bc = svc.status==="overdue"?"#FF2D55":svc.status==="soon"?"#FF9500":svc.status==="upcoming"?"#EFBF04":"#34C759";
-    const stColor = {overdue:"#FF2D55",soon:"#FF9500",upcoming:"#EFBF04",ok:"#34C759",unknown:"#8B9299"}[svc.status];
-    const isExp = state.expandedSvcId === svc.id;
-
-    html += `<div class="svc-card" style="border-left:3px solid ${stColor};animation-delay:${i*.03}s" onclick="toggleSvc('${svc.id}')">`;
-    html += `<div class="svc-top"><div style="flex:1;min-width:0">`;
-    html += `<div class="svc-meta"><span class="status-badge ${st.cls}">${st.label}</span>`;
-    html += `<span class="priority-dot" style="background:${PRIORITY_COLORS[svc.priority]}"></span>`;
-    html += `<span class="svc-group-label">${grp.icon} ${grp.label}</span></div>`;
-    html += `<div class="svc-name">${svc.name}</div></div>`;
-    html += `<div class="svc-right"><div class="svc-km" style="color:${stColor}">${svc.status==="unknown"?"—":svc.kmRemaining<=0?"−"+fmtK(Math.abs(svc.kmRemaining))+" km":fmtK(svc.kmRemaining)+" km"}</div>`;
-    html += `<div class="svc-interval">/${fmtK(svc.kmInterval)} km / ${svc.monthInterval} мес</div></div></div>`;
-    html += `<div class="progress-track"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${bc}"></div></div>`;
-
-    if (isExp) {
-      html += `<div class="svc-expanded"><div class="svc-note">💡 ${svc.note}</div><div class="svc-details">`;
-      if (svc.last) {
-        html += `<div class="svc-detail"><span class="svc-detail-label">Последняя замена:</span><span>${fmtDate(svc.last.date)} при ${fmtKm(svc.last.mileage)}</span></div>`;
-        html += `<div class="svc-detail"><span class="svc-detail-label">Следующая замена:</span><span>при ${fmtKm(svc.nextAtKm)} или до ${fmtDate(svc.nextByDate)}</span></div>`;
-        html += `<div class="svc-detail"><span class="svc-detail-label">С последней замены:</span><span>${fmtKm(svc.kmSinceLast)} / ${Math.round(svc.daysSinceLast/30.44)} мес</span></div>`;
-      } else {
-        html += `<div style="color:#8B9299;font-style:italic;font-size:12px">Нет данных. Добавьте запись!</div>`;
-      }
-      html += `</div><button class="btn-mark-done" onclick="event.stopPropagation();addFromSchedule('${svc.id}')">✅ Записать выполнение</button></div>`;
-    }
-    html += `</div>`;
-  });
-
-  html += `</div>`;
-  area.innerHTML = html;
-}
-
-function renderRecords(area) {
-  let recs = state.records
-    .filter(r => state.filterCat==="all" || r.category===state.filterCat)
-    .filter(r => !state.searchQuery || r.title.toLowerCase().includes(state.searchQuery.toLowerCase()) || (r.notes && r.notes.toLowerCase().includes(state.searchQuery.toLowerCase())));
-  if (state.sortBy==="date") recs.sort((a,b)=>new Date(b.date)-new Date(a.date));
-  else if (state.sortBy==="cost") recs.sort((a,b)=>b.cost-a.cost);
-  else recs.sort((a,b)=>b.mileage-a.mileage);
-
-  let html = `<div class="filters-bar">
-    <input class="search-input" placeholder="🔍 Поиск..." value="${state.searchQuery}" oninput="state.searchQuery=this.value;render()">
-    <select class="filter-select" onchange="state.filterCat=this.value;render()">
-      <option value="all" ${state.filterCat==="all"?"selected":""}>Все</option>
-      ${CATEGORIES.map(c=>`<option value="${c.id}" ${state.filterCat===c.id?"selected":""}>${c.icon} ${c.label}</option>`).join("")}
-    </select>
-    <select class="filter-select" onchange="state.sortBy=this.value;render()">
-      <option value="date" ${state.sortBy==="date"?"selected":""}>Дата</option>
-      <option value="cost" ${state.sortBy==="cost"?"selected":""}>Цена</option>
-      <option value="mileage" ${state.sortBy==="mileage"?"selected":""}>Пробег</option>
-    </select>
-  </div>`;
-
-  if (!recs.length) {
-    html += `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Нет записей</div></div>`;
-  } else {
-    html += `<div class="records-list">`;
-    recs.forEach((r,i) => {
-      const cat = CATEGORIES.find(c=>c.id===r.category)||CATEGORIES[10];
-      const isExp = state.expandedRecId === r.id;
-      const ls = r.serviceId ? SERVICE_SCHEDULE.find(s=>s.id===r.serviceId) : null;
-
-      html += `<div class="record" style="border-left:3px solid ${cat.color};animation-delay:${i*.03}s" onclick="toggleRec(${r.id})">`;
-      html += `<div class="record-main"><div style="flex:1;min-width:0">`;
-      html += `<span class="cat-badge" style="background:${cat.color}18;color:${cat.color}">${cat.icon} ${cat.label}</span>`;
-      if (ls) html += `<span class="record-link">→ ${ls.name}</span>`;
-      html += `<div class="record-title">${r.title}</div>`;
-      if (isExp && r.notes) html += `<div class="record-notes">${r.notes}</div>`;
-      html += `</div><div style="text-align:right;flex-shrink:0">`;
-      html += `<div class="record-cost">${fmtCost(r.cost)}</div>`;
-      html += `<div class="record-date">${fmtDate(r.date)}</div>`;
-      html += `<div class="record-date">${fmtKm(r.mileage)}</div>`;
-      if (isExp) html += `<div class="record-actions"><button class="btn-edit" onclick="event.stopPropagation();editRecord(${r.id})">✏️</button><button class="btn-delete" onclick="event.stopPropagation();deleteRecord(${r.id})">🗑</button></div>`;
-      html += `</div></div></div>`;
-    });
-    html += `</div>`;
-  }
-  area.innerHTML = html;
-}
-
-function renderStats(area) {
-  const total = state.records.reduce((s,r)=>s+r.cost,0);
-  let html = `<div class="stats-grid">
-    <div class="stat-box"><div class="stat-label">Всего</div><div class="stat-value" style="color:var(--accent)">${fmtCost(total)}</div></div>
-    <div class="stat-box"><div class="stat-label">Записей</div><div class="stat-value">${state.records.length}</div></div>
-  </div>`;
-  html += `<div class="section-title">По категориям</div><div class="cat-stats-list">`;
-  CATEGORIES.forEach(c => {
-    const cr = state.records.filter(r=>r.category===c.id);
-    if (!cr.length) return;
-    const ct = cr.reduce((s,r)=>s+r.cost,0);
-    const pct = total ? (ct/total)*100 : 0;
-    html += `<div class="cat-stat-card">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:18px">${c.icon}</span>
-        <span style="font-size:12px;font-weight:600;flex:1">${c.label}</span>
-        <span style="font-size:10px;color:var(--text-muted)">${cr.length} зап.</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${c.color}"></div></div>
-      <div style="display:flex;justify-content:space-between;margin-top:5px;font-family:var(--font-mono);font-size:12px">
-        <span style="color:${c.color};font-weight:700">${fmtCost(ct)}</span>
-        <span style="color:var(--text-muted);font-size:11px">${pct.toFixed(1)}%</span>
-      </div>
-    </div>`;
-  });
-  html += `</div>`;
-  area.innerHTML = html;
-}
-
-/* ═══════════════════════════════════════════
-   ACTIONS
-   ═══════════════════════════════════════════ */
-function switchTab(t) { state.activeTab = t; render(); }
-function setEngine(t) { state.engineType = t; render(); }
-function setMode(m) { state.driveMode = m; render(); }
-function setSchedFilter(f) { state.scheduleFilter = f; render(); }
-function toggleSvc(id) { state.expandedSvcId = state.expandedSvcId===id ? null : id; render(); }
-function toggleRec(id) { state.expandedRecId = state.expandedRecId===id ? null : id; render(); }
-
-function clearAll() { if(confirm("Очистить все записи?")) { state.records=[]; render(); } }
-
-function openMileageModal() {
-  document.getElementById("mileageInput").value = state.currentMileage;
-  document.getElementById("mileageModal").classList.remove("hidden");
-}
-function closeMileageModal() { document.getElementById("mileageModal").classList.add("hidden"); }
-function saveMileage() {
-  const v = parseInt(document.getElementById("mileageInput").value);
-  if (v > 0) state.currentMileage = v;
-  closeMileageModal(); render();
-}
-
-function populateFormSelects() {
-  const catSel = document.getElementById("fCategory");
-  catSel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join("");
-  const svcSel = document.getElementById("fServiceId");
-  svcSel.innerHTML = `<option value="">— без привязки —</option>` +
-    getSchedule().map(s => `<option value="${s.id}">${GROUPS[s.group]?.icon||""} ${s.name}</option>`).join("");
-}
-
-function openForm(presets) {
-  state.editingId = null;
-  populateFormSelects();
-  document.getElementById("fDate").value = new Date().toISOString().slice(0,10);
-  document.getElementById("fMileage").value = state.currentMileage;
-  document.getElementById("fCategory").value = presets?.category || "oil";
-  document.getElementById("fCost").value = presets?.cost || "";
-  document.getElementById("fServiceId").value = presets?.serviceId || "";
-  document.getElementById("fTitle").value = presets?.title || "";
-  document.getElementById("fNotes").value = presets?.notes || "";
-  document.getElementById("formTitle").textContent = "Новая запись";
-  document.getElementById("btnSubmit").textContent = "Добавить";
-  document.getElementById("formModal").classList.remove("hidden");
-}
-
-function closeForm() { document.getElementById("formModal").classList.add("hidden"); }
-
-function editRecord(id) {
-  const r = state.records.find(x=>x.id===id); if(!r) return;
-  state.editingId = id;
-  populateFormSelects();
-  document.getElementById("fDate").value = r.date;
-  document.getElementById("fMileage").value = r.mileage;
-  document.getElementById("fCategory").value = r.category;
-  document.getElementById("fCost").value = r.cost;
-  document.getElementById("fServiceId").value = r.serviceId || "";
-  document.getElementById("fTitle").value = r.title;
-  document.getElementById("fNotes").value = r.notes || "";
-  document.getElementById("formTitle").textContent = "Редактировать";
-  document.getElementById("btnSubmit").textContent = "Сохранить";
-  document.getElementById("formModal").classList.remove("hidden");
-}
-
-function deleteRecord(id) {
-  state.records = state.records.filter(r=>r.id!==id);
-  if (state.expandedRecId===id) state.expandedRecId=null;
-  render();
-}
-
-function submitForm() {
-  const title = document.getElementById("fTitle").value.trim();
-  const mileage = parseInt(document.getElementById("fMileage").value);
-  if (!title || !mileage) return;
-  const rec = {
-    date: document.getElementById("fDate").value,
-    mileage,
-    category: document.getElementById("fCategory").value,
-    cost: parseFloat(document.getElementById("fCost").value) || 0,
-    serviceId: document.getElementById("fServiceId").value,
-    title,
-    notes: document.getElementById("fNotes").value.trim(),
-  };
-  if (state.editingId) {
-    state.records = state.records.map(r => r.id===state.editingId ? {...r,...rec} : r);
-  } else {
-    state.records.unshift({id:Date.now(),...rec});
-  }
-  if (mileage > state.currentMileage) state.currentMileage = mileage;
-  closeForm(); render();
-}
-
-function addFromSchedule(svcId) {
-  const svc = SERVICE_SCHEDULE.find(s=>s.id===svcId); if(!svc) return;
-  const cat = CATEGORIES.find(c=>c.id===svc.group) ? svc.group : "other";
-  openForm({ category:cat, title:svc.name, notes:svc.note, serviceId:svc.id });
-}
-
-// Init
-render();
-</script>
+  <script src="app.js"></script>
 </body>
 </html>
