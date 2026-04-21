@@ -144,6 +144,14 @@
     <div class="ctx-item" data-action="properties">ℹ️ Свойства</div>
   </div>
 
+  <!-- HTML VIEWER MODAL -->
+  <div class="modal html-viewer-modal" id="htmlViewerModal" style="display:none">
+    <div class="modal-title-bar"><div class="modal-icon">🌐</div><span class="modal-title" id="htmlViewerTitle">index.html</span><div class="modal-controls"><button class="editor-btn" id="htmlViewerModeBtn">📝 Код</button> <button class="editor-btn" id="htmlViewerEditBtn">✏️ Редактор</button><button class="tb-btn tb-close" id="htmlViewerClose">✕</button></div></div>
+    <div class="html-viewer-path" id="htmlViewerPath"></div>
+    <iframe class="html-viewer-frame" id="htmlViewerFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+    <pre class="html-viewer-code" id="htmlViewerCode" style="display:none"></pre>
+  </div>
+
   <!-- MODAL OVERLAY -->
   <div class="modal-overlay" id="modalOverlay" style="display:none">
 

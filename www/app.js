@@ -1101,3 +1101,52 @@ window.CapFS.init().then(() => {
     inp.addEventListener('change', inp._importHandler);
   }
 })();
+
+/* ── HTML VIEWER ── */
+function openHtmlViewer(filePath, node) {
+  var fname = filePath[filePath.length-1];
+  document.getElementById('htmlViewerTitle').textContent = fname;
+  document.getElementById('htmlViewerPath').textContent = filePath.join(' \\ ');
+  var blob = new Blob([node.content||''], {type:'text/html'});
+  var url = URL.createObjectURL(blob);
+  document.getElementById('htmlViewerFrame').src = url;
+  document.getElementById('htmlViewerFrame').style.display = 'block';
+  document.getElementById('htmlViewerCode').style.display = 'none';
+  document.getElementById('htmlViewerCode').textContent = node.content||'';
+  document.getElementById('htmlViewerModeBtn').textContent = '📝 Код';
+  document.getElementById('htmlViewerModeBtn').dataset.mode = 'preview';
+  document.getElementById('htmlViewerModeBtn').onclick = function() {
+    var m = this.dataset.mode;
+    if (m==='preview') {
+      document.getElementById('htmlViewerFrame').style.display='none';
+      document.getElementById('htmlViewerCode').style.display='block';
+      this.textContent='🌐 Просмотр'; this.dataset.mode='code';
+    } else {
+      document.getElementById('htmlViewerFrame').style.display='block';
+      document.getElementById('htmlViewerCode').style.display='none';
+      this.textContent='📝 Код'; this.dataset.mode='preview';
+    }
+  };
+  document.getElementById('htmlViewerEditBtn').onclick = function() {
+    closeModal(); openEditor(filePath, node);
+  };
+  document.getElementById('htmlViewerClose').onclick = closeModal;
+  modalOverlay.style.display='flex';
+  ['editorModal','dialogModal','propsModal','msgModal'].forEach(function(id){
+    document.getElementById(id).style.display='none';
+  });
+  document.getElementById('htmlViewerModal').style.display='flex';
+}
+
+// Переопределяем openItem для HTML
+var _origOpenItem = openItem;
+window.openItem = function(name) {
+  var node2 = getNode(currentPath);
+  var children2 = node2&&node2.type==='root' ? fs : (node2&&node2.children||{});
+  var child2 = children2[name];
+  if (child2 && child2.type==='file' && child2.ext==='.html') {
+    openHtmlViewer([...currentPath, name], child2);
+  } else {
+    _origOpenItem(name);
+  }
+};
