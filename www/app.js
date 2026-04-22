@@ -665,3 +665,40 @@ document.addEventListener('DOMContentLoaded',function(){
 /* ═══ INIT ═══ */
 render();
 console.log('🖥️ My Computer v2.0 ready');
+
+// ── IMAGE VIEWER ──
+(function(){
+  var IMG_EXTS=['.jpg','.jpeg','.png','.gif','.webp','.bmp'];
+  var _open=window.openItem||openItem;
+  window.openItem=function(name){
+    var node2=getNode(currentPath);
+    var children2=node2&&node2.type==='root'?fs:(node2&&node2.children||{});
+    var child2=children2[name];
+    if(child2&&child2.type==='file'&&IMG_EXTS.indexOf(child2.ext.toLowerCase())>=0){
+      // Show image viewer
+      var overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+      var topbar=document.createElement('div');
+      topbar.style.cssText='position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(180deg,#1e88e5,#0a52a8);display:flex;align-items:center;padding:0 8px;gap:8px;';
+      topbar.innerHTML='<span style="color:#fff;font-size:13px;flex:1;font-family:sans-serif">🖼️ '+name+'</span>';
+      var closeB=document.createElement('button');
+      closeB.textContent='✕';
+      closeB.style.cssText='background:linear-gradient(180deg,#f06060,#cc2222);color:#fff;border:none;border-radius:2px;width:24px;height:22px;font-size:12px;cursor:pointer;';
+      closeB.onclick=function(){document.body.removeChild(overlay);};
+      topbar.appendChild(closeB);
+      overlay.appendChild(topbar);
+      var img=document.createElement('img');
+      img.style.cssText='max-width:95vw;max-height:calc(100vh - 80px);margin-top:44px;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+      img.src=child2.content; // base64 data URL
+      img.onerror=function(){img.alt='Не удалось отобразить изображение';img.style.color='#fff';};
+      overlay.appendChild(img);
+      var info=document.createElement('div');
+      info.style.cssText='color:#aaa;font-size:11px;font-family:sans-serif;margin-top:8px;';
+      info.textContent=name+(child2.size?' • '+Math.round(child2.size/1024)+'КБ':'');
+      overlay.appendChild(info);
+      document.body.appendChild(overlay);
+    } else {
+      _open(name);
+    }
+  };
+})();
