@@ -702,3 +702,42 @@ console.log('🖥️ My Computer v2.0 ready');
     }
   };
 })();
+
+// ── FIX IMPORT BINARY AS BASE64 ──
+document.addEventListener('DOMContentLoaded',function(){
+  var inp=document.getElementById('realImportInput');
+  if(!inp) return;
+  var IMG_EXTS=['.jpg','.jpeg','.png','.gif','.webp','.bmp'];
+  var TEXT_EXTS=['.txt','.json','.html','.js','.css','.md','.csv','.xml','.ts','.py','.sql'];
+  inp.addEventListener('change',async function(){
+    if(!currentPath.length){showMsg('Импорт','Откройте папку сначала.','OK');return;}
+    var parent=getNode(currentPath);
+    if(!parent||!parent.children){showMsg('Импорт','Выберите папку.','OK');return;}
+    var count=0;
+    for(var i=0;i<inp.files.length;i++){
+      var file=inp.files[i];
+      var ext=file.name.includes('.')?file.name.slice(file.name.lastIndexOf('.')).toLowerCase():'.txt';
+      var now=Date.now(); var name=file.name;
+      if(parent.children[name]) name=name.replace(ext,'_copy'+ext);
+      try{
+        var content;
+        if(IMG_EXTS.indexOf(ext)>=0){
+          // Read as base64 DataURL
+          content=await new Promise(function(res){
+            var r=new FileReader();
+            r.onload=function(){res(r.result);};
+            r.readAsDataURL(file);
+          });
+        } else if(TEXT_EXTS.indexOf(ext)>=0){
+          content=await file.text();
+        } else {
+          content='[binary] '+file.name+' ('+Math.round(file.size/1024)+'КБ)';
+        }
+        parent.children[name]={type:'file',ext:ext,created:now,modified:now,content:content};
+        count++;
+      }catch(e){console.log(e);}
+    }
+    if(count>0){saveFS();render();showMsg('Импорт','✅ Импортировано: '+count+' файл(ов)','OK');}
+    inp.value='';
+  },true); // true = override previous listener
+});
