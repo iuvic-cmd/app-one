@@ -1163,3 +1163,60 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 });
+
+// ── FIX HTML VIEWER STABLE ──
+window.openItem = function(name) {
+  var node2 = getNode(currentPath);
+  var children2 = node2&&node2.type==='root' ? fs : (node2&&node2.children||{});
+  var child2 = children2[name];
+  if (!child2) return;
+  if (child2.type==='drive'||child2.type==='folder') { navigate([...currentPath,name]); return; }
+  if (child2.type==='file' && child2.ext==='.html') {
+    var viewer = document.getElementById('htmlViewerModal');
+    document.getElementById('htmlViewerTitle').textContent = name;
+    document.getElementById('htmlViewerPath').textContent = [...currentPath,name].join(' \\ ');
+    var frame = document.getElementById('htmlViewerFrame');
+    var code = document.getElementById('htmlViewerCode');
+    // Используем srcdoc вместо blob URL
+    frame.srcdoc = child2.content||'<p>Пусто</p>';
+    frame.style.display='block';
+    code.style.display='none';
+    code.textContent = child2.content||'';
+    document.getElementById('htmlViewerModeBtn').textContent='📝 Код';
+    document.getElementById('htmlViewerModeBtn').dataset.mode='preview';
+    document.getElementById('htmlViewerEditBtn').onclick=function(){
+      modalOverlay.style.display='none';
+      viewer.style.display='none';
+      openEditor([...currentPath,name],child2);
+    };
+    document.getElementById('htmlViewerClose').onclick=function(){
+      modalOverlay.style.display='none';
+      viewer.style.display='none';
+    };
+    document.getElementById('htmlViewerModeBtn').onclick=function(){
+      if(this.dataset.mode==='preview'){
+        frame.style.display='none'; code.style.display='block';
+        this.textContent='🌐 Просмотр'; this.dataset.mode='code';
+      } else {
+        frame.style.display='block'; code.style.display='none';
+        this.textContent='📝 Код'; this.dataset.mode='preview';
+      }
+    };
+    modalOverlay.style.display='flex';
+    ['editorModal','dialogModal','propsModal','msgModal'].forEach(function(id){
+      document.getElementById(id).style.display='none';
+    });
+    viewer.style.display='flex';
+  } else {
+    openEditor([...currentPath,name],child2);
+  }
+};
+
+// ── FIX CLOSE BUTTON ──
+document.getElementById('closeBtn').onclick = function() {
+  if (window.Capacitor) {
+    window.Capacitor.Plugins.App.exitApp();
+  } else {
+    window.close();
+  }
+};
