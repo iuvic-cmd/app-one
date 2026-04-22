@@ -1,5 +1,10 @@
 {
   "appId": "com.iuvic.appone",
-  "appName": "Приложение 1",
-  "webDir": "www"
+  "appName": "Мой компьютер",
+  "webDir": "www",
+  "plugins": {
+    "Filesystem": {
+      "iosScheme": "ionic"
+    }
+  }
 }

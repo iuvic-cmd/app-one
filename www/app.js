@@ -827,3 +827,159 @@ document.addEventListener('DOMContentLoaded',function(){
     }
   };
 })();
+
+// ── CAPACITOR FILESYSTEM SAVE ──
+(function(){
+  var CAP = window.Capacitor;
+  if(!CAP || !CAP.Plugins || !CAP.Plugins.Filesystem) return;
+  var FS = CAP.Plugins.Filesystem;
+
+  // Request permissions on start
+  FS.requestPermissions().catch(function(){});
+
+  // Override import to save real files to device
+  var inp = document.getElementById('realImportInput');
+  if(!inp) return;
+  var MEDIA_EXTS=['.jpg','.jpeg','.png','.gif','.webp','.mp4','.webm','.mov','.3gp','.mp3','.wav','.aac'];
+  var TEXT_EXTS=['.txt','.json','.html','.js','.css','.md','.csv','.xml','.ts','.py','.sql'];
+
+  inp.addEventListener('change', async function(){
+    if(!currentPath.length){showMsg('Импорт','Откройте папку сначала.','OK');return;}
+    var parent=getNode(currentPath);
+    if(!parent||!parent.children){showMsg('Импорт','Выберите папку.','OK');return;}
+    var count=0;
+
+    for(var i=0;i<inp.files.length;i++){
+      var file=inp.files[i];
+      var ext=file.name.includes('.')?file.name.slice(file.name.lastIndexOf('.')).toLowerCase():'.txt';
+      var now=Date.now(); var name=file.name;
+      if(parent.children[name]) name=name.replace(ext,'_copy'+ext);
+
+      try{
+        var isMedia = MEDIA_EXTS.indexOf(ext)>=0;
+        var isText  = TEXT_EXTS.indexOf(ext)>=0;
+
+        if(isMedia){
+          // Save to device Documents/MyComputer/
+          var b64 = await new Promise(function(res){
+            var r=new FileReader(); r.onload=function(){res(r.result.split(',')[1]);}; r.readAsDataURL(file);
+          });
+          var devPath = 'MyComputer/'+name;
+          await FS.writeFile({
+            path: devPath,
+            data: b64,
+            directory: 'DOCUMENTS',
+            recursive: true
+          });
+          // Store reference in FS (not full base64 — saves memory)
+          parent.children[name]={type:'file',ext:ext,created:now,modified:now,
+            content:'capacitor://'+devPath,
+            devicePath: devPath,
+            size: file.size};
+        } else if(isText){
+          var text = await file.text();
+          parent.children[name]={type:'file',ext:ext,created:now,modified:now,content:text};
+        } else {
+          parent.children[name]={type:'file',ext:ext,created:now,modified:now,
+            content:'[binary] '+file.name+' ('+Math.round(file.size/1024)+'КБ)'};
+        }
+        count++;
+      }catch(e){console.log('import err',e);}
+    }
+    if(count>0){saveFS();render();showMsg('Импорт','✅ Сохранено в Документы/MyComputer: '+count+' файл(ов)','OK');}
+    inp.value='';
+  }, true);
+
+  // Read media from device when opening
+  window._readDeviceFile = async function(devicePath){
+    try{
+      var result = await FS.readFile({path:devicePath, directory:'DOCUMENTS'});
+      return result.data;
+    }catch(e){return null;}
+  };
+})();
+
+// ── VIDEO VIEWER ──
+(function(){
+  var VID_EXTS=['.mp4','.webm','.ogg','.mov','.3gp','.mkv'];
+  var _origOpen=window.openItem;
+  window.openItem=function(name){
+    var node2=getNode(currentPath);
+    var children2=node2&&node2.type==='root'?fs:(node2&&node2.children||{});
+    var child2=children2[name];
+    if(child2&&child2.type==='file'&&VID_EXTS.indexOf(child2.ext.toLowerCase())>=0){
+      var overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;';
+      var topbar=document.createElement('div');
+      topbar.style.cssText='height:40px;background:linear-gradient(180deg,#1e88e5,#0a52a8);display:flex;align-items:center;padding:0 8px;flex-shrink:0;';
+      topbar.innerHTML='<span style="color:#fff;font-size:13px;flex:1;font-family:sans-serif">🎬 '+name+'</span>';
+      var closeB=document.createElement('button');
+      closeB.textContent='✕';
+      closeB.style.cssText='background:linear-gradient(180deg,#f06060,#cc2222);color:#fff;border:none;border-radius:2px;width:24px;height:22px;font-size:13px;cursor:pointer;';
+      closeB.onclick=function(){vid.pause();vid.src='';document.body.removeChild(overlay);};
+      topbar.appendChild(closeB);
+      overlay.appendChild(topbar);
+
+      var vid=document.createElement('video');
+      vid.controls=true;
+      vid.autoplay=true;
+      vid.playsinline=true;
+      vid.style.cssText='flex:1;width:100%;background:#000;';
+
+      if(child2.content&&child2.content.startsWith('data:')){
+        vid.src=child2.content;
+      } else {
+        // Not stored as base64 — show message
+        var msg=document.createElement('div');
+        msg.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;font-size:14px;text-align:center;padding:20px;';
+        msg.innerHTML='⚠️ Видео не сохранено как base64.<br><br>Удалите файл и импортируйте заново.<br><small style="color:#aaa">Видео сохраняется при импорте</small>';
+        overlay.appendChild(msg);
+        document.body.appendChild(overlay);
+        return;
+      }
+
+      overlay.appendChild(vid);
+      document.body.appendChild(overlay);
+    } else {
+      _origOpen(name);
+    }
+  };
+})();
+
+// ── FIX IMPORT ADD VIDEO ──
+document.addEventListener('DOMContentLoaded',function(){
+  var inp=document.getElementById('realImportInput');
+  if(!inp) return;
+  var MEDIA_EXTS=['.jpg','.jpeg','.png','.gif','.webp','.bmp','.mp4','.webm','.ogg','.mov','.3gp'];
+  var TEXT_EXTS=['.txt','.json','.html','.js','.css','.md','.csv','.xml','.ts','.py','.sql'];
+  inp.addEventListener('change',async function(){
+    if(!currentPath.length){showMsg('Импорт','Откройте папку сначала.','OK');return;}
+    var parent=getNode(currentPath);
+    if(!parent||!parent.children){showMsg('Импорт','Выберите папку.','OK');return;}
+    var count=0;
+    for(var i=0;i<inp.files.length;i++){
+      var file=inp.files[i];
+      var ext=file.name.includes('.')?file.name.slice(file.name.lastIndexOf('.')).toLowerCase():'.txt';
+      var now=Date.now(); var name=file.name;
+      if(parent.children[name]) name=name.replace(ext,'_copy'+ext);
+      try{
+        var content;
+        if(MEDIA_EXTS.indexOf(ext)>=0){
+          content=await new Promise(function(res){
+            var r=new FileReader();
+            r.onload=function(){res(r.result);};
+            r.readAsDataURL(file);
+          });
+        } else if(TEXT_EXTS.indexOf(ext)>=0){
+          content=await file.text();
+        } else {
+          content='[binary] '+file.name+' ('+Math.round(file.size/1024)+'КБ)';
+        }
+        parent.children[name]={type:'file',ext:ext,created:now,modified:now,content:content,size:file.size};
+        count++;
+      }catch(e){console.log(e);}
+    }
+    if(count>0){saveFS();render();showMsg('Импорт','✅ Импортировано: '+count+' файл(ов)','OK');}
+    inp.value='';
+  },true);
+});
