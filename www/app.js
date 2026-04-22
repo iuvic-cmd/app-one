@@ -741,3 +741,89 @@ document.addEventListener('DOMContentLoaded',function(){
     inp.value='';
   },true); // true = override previous listener
 });
+
+// ── PINCH ZOOM FOR IMAGE VIEWER ──
+(function(){
+  var _origOpen=window.openItem;
+  window.openItem=function(name){
+    var node2=getNode(currentPath);
+    var children2=node2&&node2.type==='root'?fs:(node2&&node2.children||{});
+    var child2=children2[name];
+    var IMG_EXTS=['.jpg','.jpeg','.png','.gif','.webp','.bmp'];
+    if(child2&&child2.type==='file'&&IMG_EXTS.indexOf(child2.ext.toLowerCase())>=0&&child2.content&&child2.content.startsWith('data:')){
+      var overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;touch-action:none;';
+      var topbar=document.createElement('div');
+      topbar.style.cssText='height:40px;background:linear-gradient(180deg,#1e88e5,#0a52a8);display:flex;align-items:center;padding:0 8px;gap:8px;flex-shrink:0;';
+      topbar.innerHTML='<span style="color:#fff;font-size:13px;flex:1;font-family:sans-serif">🖼️ '+name+'</span>';
+      var closeB=document.createElement('button');
+      closeB.textContent='✕';
+      closeB.style.cssText='background:linear-gradient(180deg,#f06060,#cc2222);color:#fff;border:none;border-radius:2px;width:24px;height:22px;font-size:13px;cursor:pointer;';
+      closeB.onclick=function(){document.body.removeChild(overlay);};
+      topbar.appendChild(closeB);
+      overlay.appendChild(topbar);
+
+      var container=document.createElement('div');
+      container.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;';
+      var img=document.createElement('img');
+      img.src=child2.content;
+      img.style.cssText='max-width:100%;max-height:100%;border-radius:4px;transform-origin:center center;transition:transform 0.1s;user-select:none;-webkit-user-select:none;';
+      container.appendChild(img);
+      overlay.appendChild(container);
+
+      // Pinch zoom state
+      var scale=1, lastScale=1;
+      var posX=0, posY=0, lastPosX=0, lastPosY=0;
+      var startDist=0, startScale=1;
+      var touches=[];
+
+      function getDist(t1,t2){
+        var dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
+        return Math.sqrt(dx*dx+dy*dy);
+      }
+      function applyTransform(){
+        img.style.transform='translate('+posX+'px,'+posY+'px) scale('+scale+')';
+      }
+
+      container.addEventListener('touchstart',function(e){
+        e.preventDefault();
+        if(e.touches.length===2){
+          startDist=getDist(e.touches[0],e.touches[1]);
+          startScale=scale;
+        } else if(e.touches.length===1){
+          lastPosX=posX; lastPosY=posY;
+          touches=[{x:e.touches[0].clientX,y:e.touches[0].clientY}];
+        }
+      },{passive:false});
+
+      container.addEventListener('touchmove',function(e){
+        e.preventDefault();
+        if(e.touches.length===2){
+          var dist=getDist(e.touches[0],e.touches[1]);
+          scale=Math.min(5,Math.max(1,startScale*(dist/startDist)));
+          applyTransform();
+        } else if(e.touches.length===1&&touches.length){
+          if(scale>1){
+            posX=lastPosX+(e.touches[0].clientX-touches[0].x);
+            posY=lastPosY+(e.touches[0].clientY-touches[0].y);
+            applyTransform();
+          }
+        }
+      },{passive:false});
+
+      container.addEventListener('touchend',function(e){
+        if(scale<1){scale=1;posX=0;posY=0;applyTransform();}
+        // Double tap to reset
+        if(e.changedTouches.length===1){
+          var now=Date.now();
+          if(now-(container._lastTap||0)<300){scale=1;posX=0;posY=0;applyTransform();}
+          container._lastTap=now;
+        }
+      });
+
+      document.body.appendChild(overlay);
+    } else {
+      _origOpen(name);
+    }
+  };
+})();
