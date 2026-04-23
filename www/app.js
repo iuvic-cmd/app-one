@@ -983,3 +983,135 @@ document.addEventListener('DOMContentLoaded',function(){
     inp.value='';
   },true);
 });
+
+// ── DRAG & DROP MOVE FILES ──
+(function(){
+  var dragItem=null, dragPath=null;
+  var dragGhost=null;
+
+  function createGhost(name, node){
+    var g=document.createElement('div');
+    g.style.cssText='position:fixed;z-index:8000;background:#cce4f7;border:2px solid #0078d4;border-radius:4px;padding:4px 8px;font-size:12px;font-family:sans-serif;pointer-events:none;opacity:0.85;display:flex;align-items:center;gap:4px;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+    g.innerHTML=getIconEmoji(name,node)+' '+name;
+    document.body.appendChild(g);
+    return g;
+  }
+
+  function moveGhost(x,y){
+    if(dragGhost){dragGhost.style.left=(x-40)+'px';dragGhost.style.top=(y-20)+'px';}
+  }
+
+  function getTreeItemAtPoint(x,y){
+    var els=document.elementsFromPoint(x,y);
+    for(var i=0;i<els.length;i++){
+      if(els[i].classList.contains('tree-item')){
+        var path=JSON.parse(els[i].dataset.path||'null');
+        return path;
+      }
+      if(els[i].classList.contains('file-item')){
+        var name=els[i].dataset.name;
+        var node=getNode(currentPath);
+        var ch=node&&node.type==='root'?fs:(node&&node.children||{});
+        if(ch[name]&&(ch[name].type==='folder'||ch[name].type==='drive')){
+          return [...currentPath,name];
+        }
+      }
+    }
+    return null;
+  }
+
+  // Add tree item data-path
+  var origRenderTree=window.renderTree||renderTree;
+  function patchTreeItems(){
+    document.querySelectorAll('.tree-item').forEach(function(el){
+      var label=el.textContent.trim();
+      // Find matching path from text
+    });
+  }
+
+  // Patch makeTreeItem to store path
+  var _origMake=window.makeTreeItem||makeTreeItem;
+
+  // Long press on file → start drag
+  document.getElementById('fileGrid').addEventListener('touchstart',function(e){
+    var item=e.target.closest('.file-item');
+    if(!item) return;
+    var name=item.dataset.name;
+    var node=getNode(currentPath);
+    var ch=node&&node.type==='root'?fs:(node&&node.children||{});
+    var child=ch[name];
+    if(!child||child.type==='drive') return;
+
+    var timer=setTimeout(function(){
+      dragItem=name;
+      dragPath=[...currentPath];
+      dragGhost=createGhost(name,child);
+      moveGhost(e.touches[0].clientX,e.touches[0].clientY);
+      item.style.opacity='0.4';
+      // Vibrate
+      if(navigator.vibrate) navigator.vibrate(50);
+    },500);
+
+    function cancelDrag(){
+      clearTimeout(timer);
+      item.removeEventListener('touchend',cancelDrag);
+      item.removeEventListener('touchmove',cancelOnMove);
+    }
+    function cancelOnMove(){
+      clearTimeout(timer);
+      item.removeEventListener('touchend',cancelDrag);
+      item.removeEventListener('touchmove',cancelOnMove);
+    }
+    item.addEventListener('touchend',cancelDrag,{once:true});
+    item.addEventListener('touchmove',cancelOnMove,{once:true});
+  },{passive:true});
+
+  document.addEventListener('touchmove',function(e){
+    if(!dragItem) return;
+    e.preventDefault();
+    var touch=e.touches[0];
+    moveGhost(touch.clientX,touch.clientY);
+    // Highlight target
+    document.querySelectorAll('.file-item,.tree-item').forEach(function(el){el.style.background='';});
+    var target=getTreeItemAtPoint(touch.clientX,touch.clientY);
+    if(target!==null){
+      var els=document.elementsFromPoint(touch.clientX,touch.clientY);
+      for(var i=0;i<els.length;i++){
+        if(els[i].classList.contains('file-item')||els[i].classList.contains('tree-item')){
+          els[i].style.background='#cce4f7'; break;
+        }
+      }
+    }
+  },{passive:false});
+
+  document.addEventListener('touchend',function(e){
+    if(!dragItem) return;
+    var touch=e.changedTouches[0];
+    var targetPath=getTreeItemAtPoint(touch.clientX,touch.clientY);
+
+    // Cleanup
+    if(dragGhost){document.body.removeChild(dragGhost);dragGhost=null;}
+    document.querySelectorAll('.file-item').forEach(function(el){el.style.opacity='';el.style.background='';});
+    document.querySelectorAll('.tree-item').forEach(function(el){el.style.background='';});
+
+    if(targetPath&&JSON.stringify(targetPath)!==JSON.stringify(dragPath)){
+      var srcParent=getNode(dragPath);
+      var srcChildren=srcParent&&srcParent.type==='root'?fs:(srcParent&&srcParent.children||{});
+      var fileNode=srcChildren[dragItem];
+      var destParent=getNode(targetPath);
+
+      if(fileNode&&destParent&&destParent.children!==undefined){
+        var destChildren=destParent.type==='root'?null:destParent.children;
+        if(destChildren){
+          var newName=dragItem;
+          if(destChildren[newName]) newName=newName.replace(/(\.[\w]+)?$/,'_copy$1');
+          destChildren[newName]=fileNode;
+          delete srcChildren[dragItem];
+          saveFS(); render();
+          showMsg('Перемещено','✅ "'+dragItem+'" → '+targetPath.join(' \\ '),'OK');
+        }
+      }
+    }
+    dragItem=null; dragPath=null;
+  });
+})();
