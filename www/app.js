@@ -894,3 +894,12 @@ console.log('🖥️ My Computer v3.0 ready');
 
   console.log('✅ Capacitor Filesystem initialized - Documents/MyComputer/');
 })();
+
+// ── TRASH IN START MENU ──
+document.addEventListener('DOMContentLoaded',function(){
+  var btn=document.getElementById('smTrash');
+  if(btn) btn.addEventListener('click',function(){
+    startMenu.style.display='none';
+    openTrash();
+  });
+});
