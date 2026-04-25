@@ -734,3 +734,163 @@ document.addEventListener('DOMContentLoaded',function(){
 /* ═══ INIT ═══ */
 render();
 console.log('🖥️ My Computer v3.0 ready');
+
+// ═══ CAPACITOR FILESYSTEM STORAGE ═══
+(function(){
+  if(!window.Capacitor||!window.Capacitor.Plugins||!window.Capacitor.Plugins.Filesystem) {
+    console.log('Capacitor FS not available - using localStorage');
+    return;
+  }
+  const FS = window.Capacitor.Plugins.Filesystem;
+  const DIR = 'DOCUMENTS';
+  const BASE = 'MyComputer';
+
+  // Request permissions
+  FS.requestPermissions().catch(()=>{});
+
+  // Save FS to device
+  async function saveToDevice(data, filename) {
+    try {
+      await FS.writeFile({
+        path: BASE+'/'+filename,
+        data: btoa(unescape(encodeURIComponent(JSON.stringify(data)))),
+        directory: DIR,
+        recursive: true
+      });
+    } catch(e){ console.log('saveToDevice error:',e); }
+  }
+
+  // Load FS from device
+  async function loadFromDevice(filename) {
+    try {
+      const r = await FS.readFile({path:BASE+'/'+filename,directory:DIR});
+      return JSON.parse(decodeURIComponent(escape(atob(r.data))));
+    } catch(e){ return null; }
+  }
+
+  // Save media file to device
+  async function saveMedia(filename, base64data) {
+    try {
+      const b64 = base64data.includes(',') ? base64data.split(',')[1] : base64data;
+      await FS.writeFile({
+        path: BASE+'/media/'+filename,
+        data: b64,
+        directory: DIR,
+        recursive: true
+      });
+      return true;
+    } catch(e){ console.log('saveMedia error:',e); return false; }
+  }
+
+  // Load media from device
+  async function loadMedia(filename) {
+    try {
+      const r = await FS.readFile({path:BASE+'/media/'+filename,directory:DIR});
+      return r.data; // base64
+    } catch(e){ return null; }
+  }
+
+  // Override saveFS to also save to device
+  const _origSaveFS = window.saveFS || saveFS;
+  window.saveFS = function() {
+    _origSaveFS();
+    saveToDevice(fs, 'fs.json');
+    saveToDevice(trash, 'trash.json');
+  };
+
+  // Override import to save media to device
+  document.addEventListener('DOMContentLoaded', function(){
+    const inp = document.getElementById('realImportInput');
+    if(!inp) return;
+    const MEDIA=['.jpg','.jpeg','.png','.gif','.webp','.bmp','.mp4','.webm','.mov','.3gp','.mp3','.wav','.aac','.m4a'];
+    const TEXT=['.txt','.json','.html','.js','.css','.md','.csv','.xml','.py','.sql'];
+
+    inp.addEventListener('change', async function(){
+      if(!currentPath.length){showMsg('Импорт','Откройте папку сначала.','OK');return;}
+      const parent=getNode(currentPath);
+      if(!parent||!parent.children){showMsg('Импорт','Выберите папку.','OK');return;}
+      let count=0;
+
+      for(const file of Array.from(inp.files)){
+        const ext=file.name.includes('.')?file.name.slice(file.name.lastIndexOf('.')).toLowerCase():'.txt';
+        const now=Date.now(); let name=file.name;
+        if(parent.children[name]) name=name.replace(ext,'_copy'+ext);
+        try{
+          if(MEDIA.includes(ext)){
+            // Read as base64
+            const b64full=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});
+            // Save to device memory
+            const saved=await saveMedia(name, b64full);
+            if(saved){
+              // Store only reference — not base64 in localStorage!
+              parent.children[name]={type:'file',ext,created:now,modified:now,
+                content:'device://'+name,
+                deviceFile:name,
+                size:file.size,
+                isDevice:true
+              };
+            } else {
+              // Fallback to base64 in localStorage
+              parent.children[name]={type:'file',ext,created:now,modified:now,content:b64full,size:file.size};
+            }
+          } else if(TEXT.includes(ext)){
+            const text=await file.text();
+            parent.children[name]={type:'file',ext,created:now,modified:now,content:text};
+          } else {
+            const b64full=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});
+            const saved=await saveMedia(name,b64full);
+            parent.children[name]={type:'file',ext,created:now,modified:now,
+              content:saved?'device://'+name:('[binary] '+file.name),
+              deviceFile:saved?name:null,size:file.size,isDevice:saved};
+          }
+          count++;
+        }catch(e){console.log(e);}
+      }
+      if(count>0){window.saveFS();render();showMsg('Импорт','✅ Сохранено в Documents/MyComputer: '+count+' файл(ов)','OK');}
+      inp.value='';
+    }, true);
+  });
+
+  // Override openItem to load media from device
+  const _origOpen = window.openItem || openItem;
+  window.openItem = async function(name){
+    const node=getNode(currentPath);
+    const ch=node&&node.type==='root'?fs:(node&&node.children||{});
+    const child=ch[name];
+    if(child&&child.isDevice&&child.deviceFile){
+      const b64=await loadMedia(child.deviceFile);
+      if(b64){
+        // Create temp node with real data
+        const tempNode={...child, content:'data:application/octet-stream;base64,'+b64};
+        // Detect type and open
+        const ext=child.ext||'';
+        if(['.jpg','.jpeg','.png','.gif','.webp'].includes(ext)){
+          const imgNode={...tempNode,content:'data:image/'+ext.replace('.','').replace('jpg','jpeg')+';base64,'+b64};
+          openImageViewer(name,imgNode);
+        } else if(['.mp4','.webm','.mov'].includes(ext)){
+          const vidNode={...tempNode,content:'data:video/'+ext.replace('.','')+ ';base64,'+b64};
+          openVideoPlayer(name,vidNode);
+        } else if(['.mp3','.wav','.aac'].includes(ext)){
+          const audNode={...tempNode,content:'data:audio/'+ext.replace('.','')+ ';base64,'+b64};
+          openAudioPlayer(name,audNode);
+        } else {
+          _origOpen(name);
+        }
+      } else {
+        showMsg('Ошибка','Файл не найден на устройстве.\nВозможно был удалён вне приложения.','OK');
+      }
+    } else {
+      _origOpen(name);
+    }
+  };
+
+  // Load FS from device on startup (override localStorage)
+  loadFromDevice('fs.json').then(data=>{
+    if(data){
+      fs=data;
+      loadFromDevice('trash.json').then(t=>{if(t)trash=t;render();});
+    }
+  });
+
+  console.log('✅ Capacitor Filesystem initialized - Documents/MyComputer/');
+})();
