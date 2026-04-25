@@ -1115,3 +1115,172 @@ document.addEventListener('DOMContentLoaded',function(){
     dragItem=null; dragPath=null;
   });
 })();
+
+// ── MULTI-SELECT + COPY/CUT/PASTE ──
+(function(){
+  var clipboard = { items:{}, operation:null }; // operation: 'copy' or 'cut'
+  var selectedItems = {}; // multi-select
+
+  // ── SELECTION ──
+  function toggleSelect(name){
+    if(selectedItems[name]) delete selectedItems[name];
+    else selectedItems[name]=true;
+    updateSelection();
+  }
+  function clearSelection(){ selectedItems={}; updateSelection(); }
+  function updateSelection(){
+    document.querySelectorAll('.file-item').forEach(function(el){
+      el.classList.toggle('selected', !!selectedItems[el.dataset.name]);
+    });
+    var count=Object.keys(selectedItems).length;
+    statusText.textContent = count>0 ? 'Выбрано: '+count+' объект(ов)' : 'Готово';
+    // Show/hide paste button
+    updateEditMenu();
+  }
+
+  // ── CONTEXT MENU EXTRA ──
+  var ctxMenu=document.getElementById('contextMenu');
+  // Add copy/cut/paste to context menu
+  var sep=document.createElement('div'); sep.className='ctx-sep';
+  var ctxCopy=document.createElement('div'); ctxCopy.className='ctx-item'; ctxCopy.dataset.action='copy'; ctxCopy.textContent='📋 Копировать';
+  var ctxCut=document.createElement('div'); ctxCut.className='ctx-item'; ctxCut.dataset.action='cut'; ctxCut.textContent='✂️ Вырезать';
+  var ctxPaste=document.createElement('div'); ctxPaste.className='ctx-item'; ctxPaste.dataset.action='paste'; ctxPaste.textContent='📌 Вставить';
+  var sep2=document.createElement('div'); sep2.className='ctx-sep';
+  // Insert before first separator
+  var firstSep=ctxMenu.querySelector('.ctx-sep');
+  ctxMenu.insertBefore(sep2,firstSep);
+  ctxMenu.insertBefore(ctxPaste,sep2);
+  ctxMenu.insertBefore(ctxCut,ctxPaste);
+  ctxMenu.insertBefore(ctxCopy,ctxCut);
+  ctxMenu.insertBefore(sep,ctxCopy);
+
+  // ── TOOLBAR BUTTONS ──
+  var toolbar=document.querySelector('.toolbar');
+  var sep3=document.createElement('div'); sep3.className='toolbar-separator';
+  var btnCopy=document.createElement('button'); btnCopy.className='tool-btn'; btnCopy.title='Копировать';
+  btnCopy.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+  var btnCut=document.createElement('button'); btnCut.className='tool-btn'; btnCut.title='Вырезать';
+  btnCut.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="20" r="2"/><circle cx="6" cy="4" r="2"/><line x1="6" y1="6" x2="6" y2="18"/><line x1="6" y1="12" x2="21" y2="3"/><line x1="6" y1="12" x2="21" y2="21"/></svg>';
+  var btnPaste=document.createElement('button'); btnPaste.className='tool-btn'; btnPaste.title='Вставить';
+  btnPaste.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>';
+  toolbar.appendChild(sep3); toolbar.appendChild(btnCopy); toolbar.appendChild(btnCut); toolbar.appendChild(btnPaste);
+
+  // ── LEFT PANEL TASKS ──
+  var taskList=document.querySelector('.task-list');
+  var taskCopy=document.createElement('div'); taskCopy.className='task-item'; taskCopy.textContent='📋 Копировать';
+  var taskCut=document.createElement('div'); taskCut.className='task-item'; taskCut.textContent='✂️ Вырезать';
+  var taskPaste=document.createElement('div'); taskPaste.className='task-item'; taskPaste.textContent='📌 Вставить';
+  taskList.appendChild(taskCopy); taskList.appendChild(taskCut); taskList.appendChild(taskPaste);
+
+  function updateEditMenu(){
+    var hasSel=Object.keys(selectedItems).length>0||selectedItem;
+    var hasClip=clipboard.operation!==null;
+    [btnPaste,ctxPaste,taskPaste].forEach(function(el){el.style.opacity=hasClip?'1':'0.4';});
+    [btnCopy,btnCut,ctxCopy,ctxCut,taskCopy,taskCut].forEach(function(el){el.style.opacity=hasSel?'1':'0.4';});
+  }
+  updateEditMenu();
+
+  // ── COPY ──
+  function doCopy(){
+    var items={};
+    var sel=Object.keys(selectedItems);
+    if(!sel.length&&selectedItem) sel=[selectedItem];
+    if(!sel.length){showMsg('Копировать','Выберите файл или папку.','OK');return;}
+    var node=getNode(currentPath);
+    var ch=node&&node.type==='root'?fs:(node&&node.children||{});
+    sel.forEach(function(name){if(ch[name]) items[name]=JSON.parse(JSON.stringify(ch[name]));});
+    clipboard={items:items, operation:'copy', fromPath:[...currentPath]};
+    showMsg('Копировать','📋 Скопировано: '+sel.length+' объект(ов)','OK');
+    updateEditMenu();
+  }
+
+  // ── CUT ──
+  function doCut(){
+    var sel=Object.keys(selectedItems);
+    if(!sel.length&&selectedItem) sel=[selectedItem];
+    if(!sel.length){showMsg('Вырезать','Выберите файл или папку.','OK');return;}
+    var node=getNode(currentPath);
+    var ch=node&&node.type==='root'?fs:(node&&node.children||{});
+    var items={};
+    sel.forEach(function(name){if(ch[name]) items[name]=JSON.parse(JSON.stringify(ch[name]));});
+    clipboard={items:items, operation:'cut', fromPath:[...currentPath]};
+    // Gray out cut items
+    document.querySelectorAll('.file-item').forEach(function(el){
+      if(items[el.dataset.name]) el.style.opacity='0.4';
+    });
+    showMsg('Вырезать','✂️ Вырезано: '+sel.length+' объект(ов)','OK');
+    updateEditMenu();
+  }
+
+  // ── PASTE ──
+  function doPaste(){
+    if(!clipboard.operation){showMsg('Вставить','Буфер обмена пуст.','OK');return;}
+    if(!currentPath.length){showMsg('Вставить','Нельзя вставить в корень.','OK');return;}
+    var destNode=getNode(currentPath);
+    if(!destNode||!destNode.children){showMsg('Вставить','Выберите папку для вставки.','OK');return;}
+    var destCh=destNode.children;
+    var count=0;
+    Object.entries(clipboard.items).forEach(function(entry){
+      var name=entry[0], node=entry[1];
+      var newName=name;
+      if(destCh[newName]) newName=newName.replace(/(\.[\w]+)?$/,' — копия$1');
+      destCh[newName]=JSON.parse(JSON.stringify(node));
+      count++;
+    });
+    // If cut — remove from source
+    if(clipboard.operation==='cut'){
+      var srcNode=getNode(clipboard.fromPath);
+      var srcCh=srcNode&&srcNode.type==='root'?fs:(srcNode&&srcNode.children||{});
+      Object.keys(clipboard.items).forEach(function(name){delete srcCh[name];});
+      clipboard={items:{},operation:null};
+    }
+    saveFS(); clearSelection(); render();
+    showMsg('Вставить','✅ Вставлено: '+count+' объект(ов)','OK');
+    updateEditMenu();
+  }
+
+  // ── EVENTS ──
+  btnCopy.addEventListener('click',doCopy);
+  btnCut.addEventListener('click',doCut);
+  btnPaste.addEventListener('click',doPaste);
+  taskCopy.addEventListener('click',doCopy);
+  taskCut.addEventListener('click',doCut);
+  taskPaste.addEventListener('click',doPaste);
+  ctxCopy.addEventListener('click',function(){hideContextMenu();doCopy();});
+  ctxCut.addEventListener('click',function(){hideContextMenu();doCut();});
+  ctxPaste.addEventListener('click',function(){hideContextMenu();doPaste();});
+
+  // Multi-select: long press on item
+  document.getElementById('fileGrid').addEventListener('touchstart',function(e){
+    var item=e.target.closest('.file-item');
+    if(!item) return;
+    var timer=setTimeout(function(){
+      if(navigator.vibrate) navigator.vibrate(30);
+      toggleSelect(item.dataset.name);
+    },400);
+    item.addEventListener('touchend',function(){clearTimeout(timer);},{once:true});
+    item.addEventListener('touchmove',function(){clearTimeout(timer);},{once:true,passive:true});
+  },{passive:true});
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown',function(e){
+    if(e.ctrlKey){
+      if(e.key==='c'){e.preventDefault();doCopy();}
+      if(e.key==='x'){e.preventDefault();doCut();}
+      if(e.key==='v'){e.preventDefault();doPaste();}
+      if(e.key==='a'){
+        e.preventDefault();
+        var node=getNode(currentPath);
+        var ch=node&&node.type==='root'?fs:(node&&node.children||{});
+        Object.keys(ch).forEach(function(n){selectedItems[n]=true;});
+        updateSelection();
+      }
+    }
+    if(e.key==='Escape') clearSelection();
+  });
+
+  // Clear selection on background click
+  document.getElementById('rightPanel').addEventListener('click',function(e){
+    if(!e.target.closest('.file-item')) clearSelection();
+  });
+})();
