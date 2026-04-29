@@ -269,4 +269,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
-localStorage.setItem('mc_yadisk_token','y0__wgBEKiMlAkY0YJBILuU8KAXEvW7p6TaDPLCsDG4zoE7j4nsfiY');
