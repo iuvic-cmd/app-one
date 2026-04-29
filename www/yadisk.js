@@ -269,3 +269,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// ── SAVE TOKEN TO DEVICE ──
+(function(){
+  const CAP = window.Capacitor;
+  if(!CAP||!CAP.Plugins||!CAP.Plugins.Filesystem) return;
+  const FS = CAP.Plugins.Filesystem;
+  const DIR = 'DOCUMENTS';
+  const TOKEN_FILE = 'MyComputer/yadisk_token.txt';
+
+  // Save token to device on set
+  const origSet = Object.getOwnPropertyDescriptor(YADISK, 'token').set;
+  Object.defineProperty(YADISK, 'token', {
+    get() { return localStorage.getItem(this.TOKEN_KEY)||''; },
+    set(t) {
+      localStorage.setItem(this.TOKEN_KEY, t);
+      // Also save to device
+      if(t) FS.writeFile({path:TOKEN_FILE, data:btoa(t), directory:DIR, recursive:true}).catch(()=>{});
+      else FS.deleteFile({path:TOKEN_FILE, directory:DIR}).catch(()=>{});
+    }
+  });
+
+  // Load token from device on startup
+  FS.readFile({path:TOKEN_FILE, directory:DIR}).then(r=>{
+    if(r&&r.data){
+      const t = atob(r.data);
+      localStorage.setItem(YADISK.TOKEN_KEY, t);
+      console.log('✅ Яндекс токен загружен с устройства');
+      // Update UI if panel open
+      const status = document.getElementById('ydStatus');
+      if(status) status.textContent = '✅ Подключено';
+    }
+  }).catch(()=>{});
+})();
