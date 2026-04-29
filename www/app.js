@@ -647,7 +647,8 @@ $('contextMenu').addEventListener('click',e=>{
     case 'copy':       doCopy(); break;
     case 'cut':        doCut(); break;
     case 'paste':      doPaste(); break;
-    case 'export':     if(ctxTarget&&ch[ctxTarget])exportFile(ctxTarget,ch[ctxTarget]); break;
+    case 'inline':     buildInlineHTML(); break;
+      case 'export':     if(ctxTarget&&ch[ctxTarget])exportFile(ctxTarget,ch[ctxTarget]); break;
     case 'properties': if(ctxTarget&&ch[ctxTarget])showProps(ctxTarget,ch[ctxTarget]); break;
   }
 });
