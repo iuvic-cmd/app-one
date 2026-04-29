@@ -707,6 +707,7 @@ const TASKS=[
   {id:'t-trash',   text:'🗑️ Корзина',         fn:openTrash},
   {id:'t-delete',  text:'🗑️ Удалить',         fn:()=>{const sel=Object.keys(selectedItems);if(sel.length)deleteItem(sel[0]);else if(selectedItem)deleteItem(selectedItem);else showMsg('Удаление','Ничего не выбрано.');}},
   {id:'t-rename',  text:'✏️ Переименовать',   fn:()=>{if(selectedItem)renameItem(selectedItem);else showMsg('Переименование','Ничего не выбрано.');}},
+  {id:'t-inline',  text:'📦 Инлайн-сборка', fn:buildInlineHTML},
   {id:'t-props',   text:'ℹ️ Свойства',        fn:()=>{const ch=getChildren(currentPath)||fs;if(selectedItem&&ch[selectedItem])showProps(selectedItem,ch[selectedItem]);else showMsg('Свойства','Ничего не выбрано.');}},
 ];
 const tl=$('taskList');
@@ -812,6 +813,39 @@ document.addEventListener('keydown', e=>{
     if(e.key==='a'){e.preventDefault();const ch=getChildren(currentPath)||{};Object.keys(ch).forEach(k=>selectedItems[k]=true);renderFiles();}
   }
 });
+
+
+/* ══════════════ INLINE BUILD ══════════════ */
+function buildInlineHTML() {
+  const ch = getChildren(currentPath) || {};
+  const htmlFile = Object.entries(ch).find(([name, node]) => 
+    node.type === "file" && (node.ext === ".html" || node.ext === ".htm")
+  );
+  if (!htmlFile) {
+    showMsg("Инлайн-сборка", "Нет HTML-файла в папке.", "OK");
+    return;
+  }
+  const [htmlName, htmlNode] = htmlFile;
+  let result = htmlNode.content;
+  let cssCount = 0, jsCount = 0;
+  Object.entries(ch).forEach(([name, node]) => {
+    if (node.type === "file" && node.ext === ".css") {
+      const re = new RegExp("<link[^>]*href=[\"\x27][^\"\x27]*" + name.replace(".", "\\.") + "[\"\x27][^>]*>", "gi");
+      if (re.test(result)) { result = result.replace(re, "<style>\n" + node.content + "\n</style>"); cssCount++; }
+    }
+    if (node.type === "file" && node.ext === ".js") {
+      const re = new RegExp("<script[^>]*src=[\"\x27][^\"\x27]*" + name.replace(".", "\\.") + "[\"\x27][^>]*></script>", "gi");
+      if (re.test(result)) { result = result.replace(re, "<script>\n" + node.content + "\n</script>"); jsCount++; }
+    }
+  });
+  result = result.replace(/<script[^>]*src=[\"\x27]capacitor\.js[\"\x27][^>]*><\/script>/gi, "");
+  const outName = htmlName.replace(/\.html?$/, "") + "_inline.html";
+  const blob = new Blob([result], {type: "text/html;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = outName; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showMsg("Инлайн-сборка", "✅ " + outName + "\nCSS: " + cssCount + " | JS: " + jsCount, "OK");
+}
 
 /* ══════════════════════════════════════
    INIT
