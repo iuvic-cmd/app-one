@@ -995,3 +995,77 @@ console.log('🖥️ My Computer v4.0 ready');
     };
   };
 })();
+
+// ── HTML VIEWER FULLSCREEN + GESTURES HINT ──
+(function(){
+  const _origShow = window.openHtmlViewer || openHtmlViewer;
+  window.openHtmlViewer = function(filePath, node) {
+    _origShow(filePath, node);
+
+    // Add fullscreen button to modal title bar
+    const titleBar = $('htmlViewerModal').querySelector('.modal-title-bar');
+    if(titleBar && !titleBar.querySelector('#htmlFullscreenBtn')) {
+      const fsBtn = document.createElement('button');
+      fsBtn.id = 'htmlFullscreenBtn';
+      fsBtn.textContent = '⛶';
+      fsBtn.title = 'Полный экран';
+      fsBtn.style.cssText = 'padding:2px 8px;font-size:13px;background:linear-gradient(180deg,#fff,#e8e8e8);border:1px solid #aaa;border-radius:2px;cursor:pointer;margin-right:4px;';
+      fsBtn.onclick = () => {
+        const modal = $('htmlViewerModal');
+        const frame = $('htmlViewerFrame');
+        if(!document._htmlFullscreen) {
+          // Go fullscreen
+          modal.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;max-width:100vw;max-height:100vh;border-radius:0;z-index:9999;display:flex;flex-direction:column;';
+          frame.style.height = 'calc(100vh - 44px)';
+          fsBtn.textContent = '⊡';
+          fsBtn.title = 'Свернуть';
+          document._htmlFullscreen = true;
+          // Hide overlay background
+          $('modalOverlay').style.background = 'transparent';
+        } else {
+          // Exit fullscreen
+          modal.style.cssText = '';
+          modal.style.display = 'flex';
+          frame.style.height = '';
+          fsBtn.textContent = '⛶';
+          fsBtn.title = 'Полный экран';
+          document._htmlFullscreen = false;
+          $('modalOverlay').style.background = '';
+        }
+      };
+      // Insert before close button
+      const controls = titleBar.querySelector('.modal-controls');
+      if(controls) controls.insertBefore(fsBtn, controls.firstChild);
+    }
+    document._htmlFullscreen = false;
+  };
+
+  // Gestures hint overlay
+  const HINT_KEY = 'mc_hints_shown';
+  if(!localStorage.getItem(HINT_KEY)) {
+    setTimeout(() => {
+      const hint = document.createElement('div');
+      hint.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;display:flex;align-items:center;justify-content:center;';
+      hint.innerHTML = `
+        <div style="background:#fff;border-radius:12px;padding:24px;max-width:300px;width:90%;font-family:sans-serif;">
+          <h3 style="text-align:center;margin-bottom:16px;font-size:16px;">👆 Жесты приложения</h3>
+          <div style="display:grid;gap:10px;font-size:13px;">
+            <div>👆 <b>Одно нажатие</b> — выбрать файл</div>
+            <div>👆👆 <b>Двойное нажатие</b> — открыть файл/папку</div>
+            <div>👆⏱️ <b>Долгое нажатие</b> — мультивыделение или контекстное меню</div>
+            <div>🤏 <b>Два пальца</b> — зум (в просмотрщике фото)</div>
+            <div>👆👆 <b>Двойной тап</b> — сброс зума (в фото)</div>
+            <div>↔️ <b>Свайп влево</b> — назад (кнопка ←)</div>
+            <div>📂 <b>В корзине:</b> двойной тап — восстановить, долгое — удалить</div>
+          </div>
+          <button id="hintOkBtn" style="width:100%;margin-top:16px;padding:10px;background:linear-gradient(180deg,#1e88e5,#0a52a8);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Понятно!</button>
+        </div>
+      `;
+      document.body.appendChild(hint);
+      document.getElementById('hintOkBtn').onclick = () => {
+        localStorage.setItem(HINT_KEY, '1');
+        document.body.removeChild(hint);
+      };
+    }, 2000);
+  }
+})();
