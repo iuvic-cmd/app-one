@@ -919,3 +919,79 @@ console.log('🖥️ My Computer v4.0 ready');
     $('htmlViewerModal').style.display = 'flex';
   };
 })();
+
+// ── TRASH FIX - ADD DELETE BUTTON ──
+(function(){
+  const _origRenderTrash = window.renderTrash || renderTrash;
+  window.renderTrash = function() {
+    const grid=$('fileGrid'); const hint=$('emptyHint');
+    $('addressBar').textContent='🗑️ Корзина';
+    $('breadcrumb').innerHTML='<span class="crumb active">🗑️ Корзина</span>';
+    grid.innerHTML='';
+
+    if(!trash.length){
+      hint.style.display='block';
+      hint.innerHTML='Корзина пуста.';
+      $('statusCount').textContent='0 объект(ов)';
+      return;
+    }
+    hint.style.display='none';
+
+    // Toolbar for trash
+    const bar=document.createElement('div');
+    bar.style.cssText='display:flex;gap:8px;margin-bottom:8px;padding:4px;background:#fff3f3;border-radius:4px;border:1px solid #ffcccc;';
+    bar.innerHTML=`
+      <button id="trashRestoreAll" style="flex:1;padding:6px;background:linear-gradient(180deg,#4da6ff,#0068cc);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;font-weight:600;">♻️ Восстановить все</button>
+      <button id="trashEmptyBtn" style="flex:1;padding:6px;background:linear-gradient(180deg,#f06060,#cc2222);color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;font-weight:600;">🗑️ Очистить корзину</button>
+    `;
+    grid.appendChild(bar);
+
+    $('statusText').textContent='Двойной тап — восстановить | Долгое нажатие — удалить';
+    $('statusCount').textContent=trash.length+' объект(ов)';
+
+    trash.forEach((item,idx)=>{
+      const el=document.createElement('div');
+      el.className='file-item';
+      el.dataset.trashIdx=idx;
+      const iw=document.createElement('div'); iw.className='file-icon-wrap'; iw.innerHTML=getIcon(item.name,item.node);
+      const lbl=document.createElement('div'); lbl.className='file-label'; lbl.textContent=item.name;
+      const date=document.createElement('div'); date.style.cssText='font-size:9px;color:#888;text-align:center;width:100%;'; date.textContent=formatDate(item.at);
+      el.appendChild(iw); el.appendChild(lbl); el.appendChild(date);
+
+      // Double tap = restore
+      let lastTap=0;
+      el.addEventListener('click',()=>{
+        const now=Date.now();
+        if(now-lastTap<350){ restoreTrashItem(idx); lastTap=0; }
+        else { lastTap=now; el.classList.toggle('selected'); }
+      });
+
+      // Long press = permanent delete
+      let pressTimer;
+      el.addEventListener('touchstart',()=>{
+        pressTimer=setTimeout(()=>{
+          if(navigator.vibrate) navigator.vibrate(60);
+          showMsg('Удалить','Удалить "'+item.name+'" безвозвратно?','Удалить','Отмена',ok=>{
+            if(!ok)return;
+            trash.splice(idx,1);
+            saveTrash(); renderFiles();
+          });
+        },600);
+      },{passive:true});
+      el.addEventListener('touchend',()=>clearTimeout(pressTimer));
+      el.addEventListener('touchmove',()=>clearTimeout(pressTimer),{passive:true});
+
+      grid.appendChild(el);
+    });
+
+    // Buttons handlers
+    document.getElementById('trashEmptyBtn').onclick=emptyTrash;
+    document.getElementById('trashRestoreAll').onclick=()=>{
+      showMsg('Восстановить','Восстановить все файлы из корзины?','Восстановить','Отмена',ok=>{
+        if(!ok)return;
+        [...trash].forEach((_,i)=>restoreTrashItem(0));
+        trash=[];saveTrash();navigate([]);
+      });
+    };
+  };
+})();
