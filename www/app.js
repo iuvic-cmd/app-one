@@ -855,3 +855,67 @@ capInit();
 // Try load from Capacitor FS first
 capLoad().then(loaded=>{ if(loaded)render(); else render(); });
 console.log('🖥️ My Computer v4.0 ready');
+
+// ── HTML VIEWER WITH JS/CSS INJECTION ──
+(function(){
+  const _origHtml = window.openHtmlViewer || openHtmlViewer;
+  window.openHtmlViewer = function(filePath, node) {
+    const folderPath = filePath.slice(0, -1);
+    const folder = getNode(folderPath);
+    let html = node.content || '';
+
+    // Inject CSS files from same folder
+    if(folder && folder.children) {
+      Object.entries(folder.children).forEach(([name, child]) => {
+        if(child.type==='file' && child.ext==='.css' && child.content) {
+          html = html.replace('</head>', `<style>/* ${name} */\n${child.content}\n</style>\n</head>`);
+          if(!html.includes('</head>')) html = `<style>${child.content}</style>\n` + html;
+        }
+      });
+
+      // Inject JS files from same folder
+      Object.entries(folder.children).forEach(([name, child]) => {
+        if(child.type==='file' && child.ext==='.js' && child.content) {
+          html = html.replace('</body>', `<script>/* ${name} */\n${child.content}\n</script>\n</body>`);
+          if(!html.includes('</body>')) html += `<script>${child.content}</script>`;
+        }
+      });
+    }
+
+    // Open with injected content
+    const fname = filePath[filePath.length-1];
+    $('htmlViewerTitle').textContent = fname;
+    $('htmlViewerPath').textContent = filePath.join(' \\ ');
+    const frame = $('htmlViewerFrame');
+    const code  = $('htmlViewerCode');
+    frame.srcdoc = html;
+    frame.style.display = 'block';
+    code.style.display  = 'none';
+    code.textContent    = node.content || '';
+
+    const modeBtn = $('htmlViewerModeBtn').cloneNode(true);
+    $('htmlViewerModeBtn').replaceWith(modeBtn);
+    modeBtn.textContent = '📝 Код'; modeBtn.dataset.mode = 'preview';
+    modeBtn.onclick = function(){
+      if(this.dataset.mode==='preview'){
+        frame.style.display='none'; code.style.display='block';
+        this.textContent='🌐 Просмотр'; this.dataset.mode='code';
+      } else {
+        frame.style.display='block'; code.style.display='none';
+        this.textContent='📝 Код'; this.dataset.mode='preview';
+      }
+    };
+
+    const editBtn = $('htmlViewerEditBtn').cloneNode(true);
+    $('htmlViewerEditBtn').replaceWith(editBtn);
+    editBtn.onclick = () => { closeModal(); openEditor(filePath, node); };
+
+    const closeBtn = $('htmlViewerClose').cloneNode(true);
+    $('htmlViewerClose').replaceWith(closeBtn);
+    closeBtn.onclick = closeModal;
+
+    modalOverlay.style.display = 'flex';
+    ['editorModal','dialogModal','propsModal','msgModal'].forEach(id => $(id).style.display='none');
+    $('htmlViewerModal').style.display = 'flex';
+  };
+})();
