@@ -97,3 +97,27 @@
 
   console.log('✅ All gestures fixed');
 })();
+
+// ── OPEN HTML IN BROWSER ──
+(function(){
+  const _orig = window.openHtmlViewer || openHtmlViewer;
+  window.openHtmlViewer = function(filePath, node) {
+    showMsg(
+      'Открыть HTML',
+      'Как открыть файл?',
+      '🌐 В браузере',
+      '📄 Просмотрщик',
+      (inBrowser) => {
+        if(inBrowser) {
+          // Open in system browser
+          const blob = new Blob([node.content||''], {type:'text/html'});
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+          setTimeout(()=>URL.revokeObjectURL(url), 5000);
+        } else {
+          _orig(filePath, node);
+        }
+      }
+    );
+  };
+})();
