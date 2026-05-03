@@ -25,6 +25,8 @@
     <div class="start-item" id="smMyComputer">🖥️ Мой компьютер</div>
     <div class="start-item" id="smTrash">🗑️ Корзина</div>
     <div class="start-item" id="smSearch">🔍 Поиск файлов</div>
+    <div class="start-item" id="smYaDisk">☁️ Яндекс Диск</div>
+    <div class="start-sep"></div>
     <div class="start-item" id="smNewFolder">📁 Новая папка</div>
     <div class="start-item" id="smNewFile">📄 Новый файл</div>
     <div class="start-sep"></div>
@@ -94,8 +96,6 @@
 
   <!-- MAIN LAYOUT -->
   <div class="main-layout">
-
-    <!-- LEFT PANEL -->
     <div class="left-panel" id="leftPanel">
       <div class="left-section-title">Папки</div>
       <div class="tree" id="folderTree"></div>
@@ -108,21 +108,16 @@
         <div class="detail-info" id="detailInfo"></div>
       </div>
     </div>
-
-    <!-- RIGHT PANEL -->
     <div class="right-panel" id="rightPanel">
       <div class="file-grid" id="fileGrid"></div>
       <div class="empty-hint" id="emptyHint" style="display:none">Папка пуста.<br>Нажмите «Новая папка» или «Новый файл».</div>
     </div>
-
   </div>
 
-  <!-- STATUS BAR -->
   <div class="status-bar">
     <span id="statusText">Готово</span>
     <span id="statusCount"></span>
   </div>
-
 </div>
 
 <!-- CONTEXT MENU -->
@@ -152,13 +147,14 @@
       <div class="modal-icon">🌐</div>
       <span class="modal-title" id="htmlViewerTitle">index.html</span>
       <div class="modal-controls">
+        <button class="editor-btn" id="htmlFullscreenBtn">⛶</button>
         <button class="editor-btn" id="htmlViewerModeBtn">📝 Код</button>
-        <button class="editor-btn" id="htmlViewerEditBtn">✏️ Редактор</button>
+        <button class="editor-btn" id="htmlViewerEditBtn">✏️</button>
         <button class="tb-btn tb-close" id="htmlViewerClose">✕</button>
       </div>
     </div>
     <div class="html-viewer-path" id="htmlViewerPath"></div>
-    <iframe class="html-viewer-frame" id="htmlViewerFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+    <iframe class="html-viewer-frame" id="htmlViewerFrame" sandbox="allow-scripts allow-same-origin allow-forms" scrolling="yes"></iframe>
     <pre class="html-viewer-code" id="htmlViewerCode" style="display:none"></pre>
   </div>
 
@@ -253,6 +249,6 @@
 
 <script src="capacitor.js"></script>
 <script src="app.js"></script>
-  <script src="yadisk.js"></script>
+<script src="yadisk.js"></script>
 </body>
 </html>
